@@ -4,8 +4,10 @@ import { getMockResult } from "@/lib/queries/mock";
 import { getActiveEntryTest } from "@/lib/queries/entry-test";
 import { getEntryTestsCached } from "@/lib/queries/catalog";
 import { getDisplayName } from "@/lib/queries/profile";
+import { getAIAnalysisByAttempt } from "@/lib/queries/insights";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { MockResult } from "@/components/quiz/mock-result";
+import { AIAnalysisTrigger } from "@/components/insights/ai-analysis-trigger";
 
 export default function MockResultPage({
   params,
@@ -26,11 +28,12 @@ async function MockResultView({
 }) {
   const { attemptId } = await params;
 
-  const [result, entryTest, tests, displayName] = await Promise.all([
+  const [result, entryTest, tests, displayName, aiAnalysis] = await Promise.all([
     getMockResult(attemptId),
     getActiveEntryTest(),
     getEntryTestsCached(),
     getDisplayName(),
+    getAIAnalysisByAttempt(attemptId),
   ]);
 
   if (!entryTest) redirect("/auth/login");
@@ -46,8 +49,12 @@ async function MockResultView({
         activeTestId={entryTest.id}
       />
       <main className="px-4 pb-24 pt-28 md:px-12 md:pb-20">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-3xl space-y-8">
           <MockResult result={result} />
+          <AIAnalysisTrigger 
+            attemptId={attemptId} 
+            hasExistingAnalysis={!!aiAnalysis}
+          />
         </div>
       </main>
     </>
