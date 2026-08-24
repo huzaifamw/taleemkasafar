@@ -181,7 +181,7 @@ export function QuestionsTable({
                               }`}
                             >
                               <span className="font-bold mr-2">
-                                {option.label}.
+                                {(option as any).label || (option as any).option_label}.
                               </span>
                               {option.content}
                               {option.is_correct && (
@@ -246,7 +246,7 @@ export function QuestionsTable({
                           Approve
                         </button>
                       )}
-                      {question.moderation_status !== "rejected" && (
+                      {(question.moderation_status as any) !== "rejected" && (
                         <button
                           onClick={() => handleReject(question.id)}
                           disabled={isActioning || isPending}

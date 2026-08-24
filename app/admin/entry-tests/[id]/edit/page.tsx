@@ -100,7 +100,7 @@ export default async function EditEntryTestPage({ params }: PageProps) {
         </div>
 
         {entryTest.test_subjects && entryTest.test_subjects.length > 0 ? (
-          <TestSubjectsList testSubjects={entryTest.test_subjects} />
+          <TestSubjectsList testSubjects={entryTest.test_subjects as any} />
         ) : (
           <div className="text-center py-8 text-gray-500">
             <p className="mb-4">No subjects assigned to this entry test yet.</p>

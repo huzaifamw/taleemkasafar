@@ -59,14 +59,14 @@ export async function createEntryTest(formData: {
   const { data, error } = await supabase
     .from("entry_tests")
     .insert({
-      slug: formData.slug,
+      slug: formData.slug || '',
       name: formData.name,
       description: formData.description,
       external_id: formData.external_id,
       source: formData.source,
       is_active: formData.is_active ?? true,
       display_order: formData.display_order ?? 0,
-    })
+    } as any)
     .select()
     .single();
 

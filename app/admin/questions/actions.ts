@@ -86,7 +86,7 @@ export async function updateQuestionStatus(
   const { error } = await supabase
     .from("questions")
     .update({
-      moderation_status: status,
+      moderation_status: status as any,
       review_note: reviewNote || null,
     })
     .eq("id", questionId);
@@ -187,10 +187,10 @@ export async function createQuestion(formData: FormData): Promise<QuestionAction
         question_id: question.id,
         option_label: opt.label,
         content: opt.text,
-        content_format: "plain",
+        content_format: "plain" as const,
         is_correct: opt.is_correct,
-        display_order: idx + 1,
-      }))
+        display_order: idx,
+      })) as any
     );
 
   if (optionsError) {
