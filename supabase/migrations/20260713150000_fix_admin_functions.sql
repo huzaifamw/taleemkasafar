@@ -1,4 +1,10 @@
 -- Fix get_recent_test_submissions function to use correct column names
+-- 
+-- Key fixes:
+-- 1. Topics table uses 'title' not 'name'
+-- 2. Handle both practice mode (topic_id) and mock mode (test_subject_id)
+-- 3. Get score from mock_results table instead of calculating from attempts
+--
 CREATE OR REPLACE FUNCTION public.get_recent_test_submissions(
   p_limit integer DEFAULT 20
 )
