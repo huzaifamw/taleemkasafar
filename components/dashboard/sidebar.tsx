@@ -12,6 +12,7 @@ const NAV: NavItem[] = [
   { href: "/", label: "Home", icon: "dashboard" },
   { href: "/subjects", label: "My Subjects", icon: "menu_book" },
   { href: "/mock", label: "Mock Tests", icon: "quiz" },
+  { href: "/insights", label: "AI Insights", icon: "psychology" },
   { href: "/performance", label: "Performance", icon: "insights" },
   { href: "/settings", label: "Settings", icon: "settings" },
 ];

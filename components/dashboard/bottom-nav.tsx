@@ -8,6 +8,7 @@ const ITEMS = [
   { href: "/", label: "Home", icon: "dashboard" },
   { href: "/subjects", label: "Subjects", icon: "menu_book" },
   { href: "/mock", label: "Tests", icon: "quiz" },
+  { href: "/insights", label: "AI", icon: "psychology" },
   { href: "/performance", label: "Profile", icon: "person" },
 ];
 
