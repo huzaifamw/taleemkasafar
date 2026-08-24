@@ -28,8 +28,9 @@ export async function banUser(
     return { success: false, error: error.message };
   }
 
-  if (!data?.success) {
-    return { success: false, error: data?.error || "Failed to ban user" };
+  const result = data as any;
+  if (!result?.success) {
+    return { success: false, error: result?.error || "Failed to ban user" };
   }
 
   revalidatePath("/admin/users");
@@ -52,8 +53,9 @@ export async function unbanUser(userId: string): Promise<UserActionResult> {
     return { success: false, error: error.message };
   }
 
-  if (!data?.success) {
-    return { success: false, error: data?.error || "Failed to unban user" };
+  const result = data as any;
+  if (!result?.success) {
+    return { success: false, error: result?.error || "Failed to unban user" };
   }
 
   revalidatePath("/admin/users");
@@ -77,8 +79,9 @@ export async function deleteUser(userId: string): Promise<UserActionResult> {
     return { success: false, error: error.message };
   }
 
-  if (!data?.success) {
-    return { success: false, error: data?.error || "Failed to delete user" };
+  const result = data as any;
+  if (!result?.success) {
+    return { success: false, error: result?.error || "Failed to delete user" };
   }
 
   revalidatePath("/admin/users");

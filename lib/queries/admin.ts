@@ -82,7 +82,7 @@ export async function getRecentTestSubmissions(
     }
 
     // If data is already an array, return it; otherwise parse it
-    return Array.isArray(data) ? data : [];
+    return Array.isArray(data) ? (data as any) : [];
   } catch (err) {
     console.error("Exception fetching recent test submissions:", err);
     return [];

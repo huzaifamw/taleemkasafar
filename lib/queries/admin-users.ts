@@ -37,10 +37,11 @@ export async function getAllUsers(
     return { users: [], total: 0, totalPages: 0 };
   }
 
+  const result = data as any;
   return {
-    users: data.users || [],
-    total: data.total || 0,
-    totalPages: data.totalPages || 0,
+    users: result?.users || [],
+    total: result?.total || 0,
+    totalPages: result?.totalPages || 0,
   };
 }
 
