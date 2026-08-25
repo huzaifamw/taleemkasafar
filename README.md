@@ -262,7 +262,7 @@ SOFTWARE.
 
 ## 👥 Authors
 
-- **Huzaifa** - [@whuzaifa2964](https://github.com/whuzaifa2964)
+- **Huzaifa** - [@huzaifamw](https://github.com/huzaifamw)
 - **Salah-ul-Din** - [@salah-ul-din](https://github.com/salah-ul-din)
 
 ---
