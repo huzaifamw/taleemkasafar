@@ -44,21 +44,21 @@ export function UserSearch({ initialSearch }: UserSearchProps) {
   };
 
   return (
-    <form onSubmit={handleSearch} className="flex gap-2">
-      <div className="flex-1 relative">
+    <form onSubmit={handleSearch} className="flex gap-3">
+      <div className="relative flex-1">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by email or name..."
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border-2 border-black px-4 py-2.5 font-body focus:outline-none focus:ring-2 focus:ring-brand disabled:opacity-50"
           disabled={isPending}
         />
         {search && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors hover:text-black"
           >
             ✕
           </button>
@@ -67,7 +67,7 @@ export function UserSearch({ initialSearch }: UserSearchProps) {
       <button
         type="submit"
         disabled={isPending}
-        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+        className="border-2 border-black bg-brand px-6 py-2.5 font-headline font-bold text-white shadow-hard transition-all hover:-translate-y-0.5 hover:shadow-hard-primary disabled:opacity-50 disabled:hover:translate-y-0"
       >
         {isPending ? "Searching..." : "Search"}
       </button>

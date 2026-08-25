@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/dashboard/icon";
+import { AdminButton } from "./admin-button";
 import type { AdminUser } from "@/lib/queries/admin-users";
 import {
   banUser,
@@ -18,6 +20,7 @@ type UsersTableProps = {
 
 /**
  * Table displaying all users with management actions.
+ * Soft Brutalist design matching admin panel aesthetic.
  */
 export function UsersTable({
   users,
@@ -98,7 +101,7 @@ export function UsersTable({
 
   if (users.length === 0) {
     return (
-      <div className="px-6 py-12 text-center text-gray-500">
+      <div className="px-6 py-12 text-center text-on-surface-variant">
         No users found
       </div>
     );
@@ -107,30 +110,30 @@ export function UsersTable({
   return (
     <div>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full">
+          <thead className="border-b-2 border-black bg-brand-fixed">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-black">
                 User
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-black">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-black">
                 Stats
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-black">
                 Joined
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-black">
                 Last Sign In
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-black">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y-2 divide-surface-container bg-white">
             {users.map((user) => {
               const isBanned = user.banned_until
                 ? new Date(user.banned_until) > new Date()
@@ -138,57 +141,61 @@ export function UsersTable({
               const isActioning = actioningUserId === user.id;
 
               return (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {user.email}
-                        </div>
-                        {user.display_name && (
-                          <div className="text-sm text-gray-500">
-                            {user.display_name}
-                          </div>
-                        )}
+                <tr
+                  key={user.id}
+                  className="transition-colors hover:bg-surface-container"
+                >
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="font-headline text-sm font-bold text-black">
+                        {user.email}
                       </div>
+                      {user.display_name && (
+                        <div className="text-sm text-on-surface-variant">
+                          {user.display_name}
+                        </div>
+                      )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4">
                     {isBanned ? (
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                      <span className="inline-flex items-center gap-1 border-2 border-black bg-danger px-2 py-1 text-xs font-bold text-white">
+                        <Icon name="block" className="text-sm" />
                         Banned
                       </span>
                     ) : user.email_confirmed_at ? (
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                      <span className="inline-flex items-center gap-1 border-2 border-black bg-green-100 px-2 py-1 text-xs font-bold text-green-800">
+                        <Icon name="check_circle" className="text-sm" />
                         Active
                       </span>
                     ) : (
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                      <span className="inline-flex items-center gap-1 border-2 border-black bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-800">
+                        <Icon name="schedule" className="text-sm" />
                         Pending
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div>{user.total_attempts || 0} attempts</div>
-                    <div className="text-xs text-gray-400">
-                      {user.total_mocks || 0} mocks
+                  <td className="px-6 py-4 text-sm text-on-surface-variant">
+                    <div className="font-bold text-black">
+                      {user.total_attempts || 0} attempts
                     </div>
+                    <div className="text-xs">{user.total_mocks || 0} mocks</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-on-surface-variant">
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-on-surface-variant">
                     {user.last_sign_in_at
                       ? new Date(user.last_sign_in_at).toLocaleDateString()
                       : "Never"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end gap-2">
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap justify-end gap-2">
                       {isBanned ? (
                         <button
                           onClick={() => handleUnban(user.id)}
                           disabled={isActioning || isPending}
-                          className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                          className="border-2 border-black bg-white px-3 py-1 text-sm font-bold text-green-600 transition-all hover:-translate-y-0.5 hover:bg-green-600 hover:text-white hover:shadow-hard-sm disabled:opacity-50 disabled:hover:translate-y-0"
                         >
                           Unban
                         </button>
@@ -196,7 +203,7 @@ export function UsersTable({
                         <button
                           onClick={() => handleBan(user.id)}
                           disabled={isActioning || isPending}
-                          className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
+                          className="border-2 border-black bg-white px-3 py-1 text-sm font-bold text-orange-600 transition-all hover:-translate-y-0.5 hover:bg-orange-600 hover:text-white hover:shadow-hard-sm disabled:opacity-50 disabled:hover:translate-y-0"
                         >
                           Ban
                         </button>
@@ -204,14 +211,14 @@ export function UsersTable({
                       <button
                         onClick={() => handlePasswordReset(user.email)}
                         disabled={isActioning || isPending}
-                        className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                        className="border-2 border-black bg-white px-3 py-1 text-sm font-bold text-brand transition-all hover:-translate-y-0.5 hover:bg-brand hover:text-white hover:shadow-hard-sm disabled:opacity-50 disabled:hover:translate-y-0"
                       >
                         Reset
                       </button>
                       <button
                         onClick={() => handleDelete(user.id, user.email)}
                         disabled={isActioning || isPending}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                        className="border-2 border-black bg-white px-3 py-1 text-sm font-bold text-danger transition-all hover:-translate-y-0.5 hover:bg-danger hover:text-white hover:shadow-hard-sm disabled:opacity-50 disabled:hover:translate-y-0"
                       >
                         Delete
                       </button>
@@ -226,25 +233,29 @@ export function UsersTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-700">
+        <div className="flex items-center justify-between border-t-2 border-black bg-surface-container px-6 py-4">
+          <div className="text-sm font-bold text-on-surface-variant">
             Page {currentPage} of {totalPages}
           </div>
           <div className="flex gap-2">
-            <button
+            <AdminButton
+              variant="secondary"
+              size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage <= 1 || isPending}
-              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              icon="chevron_left"
             >
               Previous
-            </button>
-            <button
+            </AdminButton>
+            <AdminButton
+              variant="secondary"
+              size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage >= totalPages || isPending}
-              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              icon="chevron_right"
             >
               Next
-            </button>
+            </AdminButton>
           </div>
         </div>
       )}

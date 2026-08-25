@@ -54,83 +54,85 @@ export default async function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="font-headline text-3xl font-bold tracking-tight text-black md:text-4xl">
+          Dashboard
+        </h1>
+        <p className="mt-2 text-sm text-on-surface-variant md:text-base">
           Overview of platform statistics and user activity
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
         <StatsCard
           title="Total Users"
           value={stats.total_users}
           subtitle={`+${stats.recent_signups_7days} in last 7 days`}
-          icon="👥"
+          icon="group"
           trend="up"
         />
         <StatsCard
           title="Total Attempts"
           value={stats.total_attempts}
           subtitle={`${stats.active_users_today} active today`}
-          icon="📝"
+          icon="assignment"
           trend="neutral"
         />
         <StatsCard
           title="Mock Tests"
           value={stats.total_mock_attempts}
           subtitle="Completed mock tests"
-          icon="⏱️"
+          icon="timer"
           trend="neutral"
         />
         <StatsCard
           title="Practice Sessions"
           value={stats.total_practice_attempts}
           subtitle="Practice & past papers"
-          icon="📚"
+          icon="auto_stories"
           trend="neutral"
         />
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:gap-6">
         <StatsCard
           title="Total Questions"
           value={stats.total_questions}
           subtitle="In question bank"
-          icon="❓"
+          icon="help"
           trend="neutral"
         />
         <StatsCard
           title="Published Blogs"
           value={stats.published_blogs}
           subtitle={`${stats.total_blogs} total blogs`}
-          icon="✍️"
+          icon="article"
           trend="neutral"
         />
         <StatsCard
           title="Active Today"
           value={stats.active_users_today}
           subtitle="Users active today"
-          icon="🔥"
+          icon="local_fire_department"
           trend="up"
         />
       </div>
 
       {/* Activity Chart */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
+      <div className="border-2 border-black bg-white p-4 shadow-hard md:p-6">
+        <h2 className="mb-4 font-headline text-xl font-bold text-black md:text-2xl">
           User Activity (Last 30 Days)
         </h2>
         <ActivityChart data={activityStats} />
       </div>
 
       {/* Recent Test Submissions */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">
+      <div className="overflow-x-auto border-2 border-black bg-white shadow-hard">
+        <div className="border-b-2 border-black bg-brand-fixed px-4 py-3 md:px-6 md:py-4">
+          <h2 className="font-headline text-xl font-bold text-black md:text-2xl">
             Recent Test Submissions
           </h2>
         </div>

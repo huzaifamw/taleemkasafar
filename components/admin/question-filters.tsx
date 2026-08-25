@@ -1,32 +1,60 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { AdminButton } from "./admin-button";
+
+type Subject = { id: string; name: string; slug: string };
+type Topic = { id: string; name: string };
 
 type QuestionFiltersProps = {
   initialSubject: string;
   initialTopic: string;
   initialDifficulty: string;
   initialSearch: string;
+  subjects: Subject[];
 };
 
 /**
- * Filter controls for questions list.
+ * Filter controls for questions list with Soft Brutalist design.
  */
 export function QuestionFilters({
   initialSubject,
   initialTopic,
   initialDifficulty,
   initialSearch,
+  subjects,
 }: QuestionFiltersProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
   const [subject, setSubject] = useState(initialSubject);
   const [topic, setTopic] = useState(initialTopic);
   const [difficulty, setDifficulty] = useState(initialDifficulty);
   const [search, setSearch] = useState(initialSearch);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [loadingTopics, setLoadingTopics] = useState(false);
+
+  // Load topics when subject changes
+  useEffect(() => {
+    if (subject) {
+      setLoadingTopics(true);
+      fetch(`/admin/questions/api/topics?subjectId=${subject}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setTopics(data || []);
+          setLoadingTopics(false);
+        })
+        .catch((err) => {
+          console.error("Error loading topics:", err);
+          setTopics([]);
+          setLoadingTopics(false);
+        });
+    } else {
+      setTopics([]);
+      setTopic("");
+    }
+  }, [subject]);
 
   const applyFilters = () => {
     const params = new URLSearchParams();
@@ -53,11 +81,11 @@ export function QuestionFilters({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="space-y-4 border-2 border-black bg-white p-4 shadow-hard md:p-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Search */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
             Search Statement
           </label>
           <input
@@ -65,50 +93,63 @@ export function QuestionFilters({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search questions..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border-2 border-black px-3 py-2 font-body focus:outline-none focus:ring-2 focus:ring-brand"
           />
         </div>
 
         {/* Subject Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
             Subject
           </label>
           <select
             value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => {
+              setSubject(e.target.value);
+              setTopic("");
+            }}
+            className="w-full border-2 border-black px-3 py-2 font-body focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <option value="">All Subjects</option>
-            {/* TODO: Load subjects dynamically */}
+            {subjects.map((subj) => (
+              <option key={subj.id} value={subj.id}>
+                {subj.name}
+              </option>
+            ))}
           </select>
         </div>
 
         {/* Topic Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
             Topic/Chapter
           </label>
           <select
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            disabled={!subject}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            disabled={!subject || loadingTopics}
+            className="w-full border-2 border-black px-3 py-2 font-body focus:outline-none focus:ring-2 focus:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value="">All Topics</option>
-            {/* TODO: Load topics dynamically based on subject */}
+            <option value="">
+              {loadingTopics ? "Loading..." : "All Topics"}
+            </option>
+            {topics.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
           </select>
         </div>
 
         {/* Difficulty Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
             Difficulty
           </label>
           <select
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border-2 border-black px-3 py-2 font-body focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <option value="">All Levels</option>
             <option value="easy">Easy</option>
@@ -119,21 +160,13 @@ export function QuestionFilters({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2">
-        <button
-          onClick={applyFilters}
-          disabled={isPending}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-        >
+      <div className="flex flex-wrap gap-2">
+        <AdminButton onClick={applyFilters} disabled={isPending} variant="primary" size="sm">
           {isPending ? "Applying..." : "Apply Filters"}
-        </button>
-        <button
-          onClick={clearFilters}
-          disabled={isPending}
-          className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
-        >
+        </AdminButton>
+        <AdminButton onClick={clearFilters} disabled={isPending} variant="secondary" size="sm">
           Clear All
-        </button>
+        </AdminButton>
       </div>
     </div>
   );

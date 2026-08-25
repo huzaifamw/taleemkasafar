@@ -221,14 +221,15 @@ export async function getTopicsBySubject(subjectId: string) {
 
   const { data, error } = await supabase
     .from("topics")
-    .select("id, name")
+    .select("id, title")
     .eq("subject_id", subjectId)
-    .order("name");
+    .order("title");
 
   if (error) {
     console.error("Error fetching topics:", error);
     return [];
   }
 
-  return data || [];
+  // Map title to name for consistency with component
+  return (data || []).map(topic => ({ id: topic.id, name: topic.title }));
 }

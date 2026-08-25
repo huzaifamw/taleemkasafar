@@ -23,16 +23,23 @@ export default async function AdminUsersPage({
   const { users, total, totalPages } = await getAllUsers(search, page);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="font-headline text-3xl font-bold tracking-tight text-black md:text-4xl">
+            User Management
+          </h1>
+          <p className="mt-2 text-sm text-on-surface-variant md:text-base">
             View and manage all registered users
           </p>
         </div>
-        <div className="text-sm text-gray-600">
-          Total Users: <span className="font-bold">{total}</span>
+        <div className="border-2 border-black bg-brand-fixed px-4 py-2 shadow-hard-sm">
+          <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+            Total Users
+          </p>
+          <p className="font-headline text-2xl font-bold text-black">
+            {total.toLocaleString()}
+          </p>
         </div>
       </div>
 
@@ -40,7 +47,7 @@ export default async function AdminUsersPage({
       <UserSearch initialSearch={search} />
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="overflow-x-auto border-2 border-black bg-white shadow-hard">
         <UsersTable users={users} currentPage={page} totalPages={totalPages} />
       </div>
     </div>
