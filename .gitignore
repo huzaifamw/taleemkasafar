@@ -12,7 +12,14 @@
 
 # testing
 /coverage
-/mcqs
+
+# MCQs - large CSV and SQL files (keep scripts only)
+/mcqs/*.csv
+/mcqs/import_*.sql
+/mcqs/*_batch_*.sql
+/mcqs/normalized_mcqs.csv
+
+# Temporary/local folders
 /Taleemkasafar-main
 /ui_design
 
@@ -43,6 +50,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*.local
 .env
+.env.production
 
 # vercel
 .vercel
@@ -50,3 +58,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Deployment preparation backups
+deployment-backup-*/
