@@ -10,7 +10,7 @@ import { SubjectsSection } from "@/components/dashboard/subjects-section";
 import { ChallengeSection } from "@/components/dashboard/challenge-section";
 
 /**
- * Dashboard home page with optimized streaming architecture.
+ * Student dashboard home page with optimized streaming architecture.
  * 
  * Each section streams independently with its own Suspense boundary, enabling:
  * - Instant shell rendering for immediate user feedback
