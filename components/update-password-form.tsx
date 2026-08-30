@@ -33,8 +33,8 @@ export function UpdatePasswordForm({
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      // Redirect to the authenticated root after password update.
-      router.push("/");
+      // Redirect to the student dashboard after password update.
+      router.push("/dashboard");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {

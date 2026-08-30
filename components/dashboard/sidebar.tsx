@@ -9,7 +9,7 @@ import { Icon } from "./icon";
 type NavItem = { href: string; label: string; icon: string };
 
 const NAV: NavItem[] = [
-  { href: "/", label: "Home", icon: "dashboard" },
+  { href: "/dashboard", label: "Home", icon: "dashboard" },
   { href: "/subjects", label: "My Subjects", icon: "menu_book" },
   { href: "/mock", label: "Mock Tests", icon: "quiz" },
   { href: "/insights", label: "AI Insights", icon: "psychology" },
@@ -18,7 +18,7 @@ const NAV: NavItem[] = [
 ];
 
 function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
+  if (href === "/dashboard") return pathname === "/dashboard";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

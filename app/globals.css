@@ -90,7 +90,28 @@
     /* Hidden until the font is confirmed loaded to avoid showing ligature text. */
     visibility: hidden;
   }
-  html.ms-loaded .material-symbols-outlined {
+html.ms-loaded .material-symbols-outlined {
     visibility: visible;
   }
+}
+
+@keyframes landing-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+.landing-marquee { animation: landing-marquee 28s linear infinite; }
+.landing-float { animation: landing-float 5s ease-in-out infinite; }
+.landing-grid {
+  background-image: linear-gradient(rgba(0,0,0,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.055) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-marquee, .landing-float { animation: none; }
 }

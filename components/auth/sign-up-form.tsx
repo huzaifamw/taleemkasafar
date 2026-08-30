@@ -185,7 +185,7 @@ export function SignUpForm() {
             </span>
             <div className="flex-grow border-t-2 border-surface-variant" />
           </div>
-          <SocialButtons next="/" />
+          <SocialButtons next="/dashboard" />
         </div>
 
         <div className="mt-8 flex items-center justify-center gap-2 font-headline">

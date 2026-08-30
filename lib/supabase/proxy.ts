@@ -71,11 +71,12 @@ export async function updateSession(request: NextRequest) {
 
   // Public routes that do NOT require authentication.
   const isPublicRoute =
-    pathname.startsWith("/auth") || pathname.startsWith("/login");
+    pathname === "/" ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/login");
 
   if (!user && !isPublicRoute) {
-    // No user → send to login. Everything except /auth/* is behind auth,
-    // including the root dashboard "/".
+    // No user → send to login. The landing page and auth routes stay public.
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
@@ -95,7 +96,7 @@ export async function updateSession(request: NextRequest) {
       pathname === "/auth/forgot-password";
     if (isAuthEntry) {
       const url = request.nextUrl.clone();
-      url.pathname = "/";
+      url.pathname = "/dashboard";
       url.search = "";
       return NextResponse.redirect(url);
     }

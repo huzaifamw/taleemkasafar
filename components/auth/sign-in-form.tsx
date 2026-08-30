@@ -108,7 +108,7 @@ export function SignInForm() {
           <div className="flex-grow border-t-2 border-surface-variant" />
         </div>
 
-        <SocialButtons next="/" />
+        <SocialButtons next="/dashboard" />
 
         <div className="flex items-center justify-center gap-2 font-headline">
           <span className="text-xs font-bold uppercase text-on-surface-variant">
