@@ -5,8 +5,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "clean": "rm -rf .next node_modules/.cache"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
