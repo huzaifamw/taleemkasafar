@@ -1,285 +1,219 @@
-# 📚 Taleem ka Safar
+# 📚 Taleemkasafar - Entry Test Preparation Platform
 
-> A modern entry-test preparation platform for students preparing for competitive exams in Pakistan
+**A comprehensive Next.js-based platform for Pakistani entry test preparation with mock tests, practice modes, and performance analytics.**
 
-[![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL_17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ---
 
-## 🎯 Features
+## 🎯 Overview
 
-### 📖 Smart Subject Organization
-- Choose your entry test (starting with **NET Engineering**)
-- Browse subjects, chapters, and topics with structured navigation
-- Track your progress across all subjects
+Taleemkasafar helps students prepare for university entry tests with:
+- **2 Complete Tests**: NET Engineering & PU Lahore
+- **1,444+ Questions**: Comprehensive question bank
+- **Mock Test Mode**: Simulated exam environment (100 questions, 80 minutes)
+- **Practice Mode**: Subject-wise practice with instant feedback
+- **Performance Analytics**: Track progress and identify weak areas
+- **Past Papers**: Previous year questions for exam preparation
 
-### 🎓 Flexible Practice Modes
-- **Practice Mode**: Learn with instant feedback on correct answers and detailed explanations
-- **Past Paper Mode**: Practice with real exam questions from previous years
-- **Mock Tests**: Timed, multi-subject test papers that simulate actual exam conditions
+---
 
-### 📊 Performance Analytics
-- Detailed accuracy tracking by subject, chapter, and topic
-- Identify weak areas and monitor improvement over time
-- Complete mock test history with performance trends
+## ✨ Features
 
-### 🔐 Secure Authentication
-- Email/password authentication
-- Google OAuth integration
-- Protected user data with Row Level Security (RLS)
+### 🎓 For Students
+- ✅ **Mock Tests**: Full-length practice tests with timer
+- ✅ **Subject Practice**: Practice by subject (English, Urdu, Math, IQ, GK)
+- ✅ **Chapter-wise Practice**: Targeted practice by chapter
+- ✅ **Past Papers**: Previous year questions
+- ✅ **Performance Dashboard**: View scores, time taken, accuracy
+- ✅ **Answer Review**: Review correct/incorrect answers after test
+- ✅ **Progress Tracking**: Monitor improvement over time
+
+### 👨‍💼 For Admins
+- ✅ **Question Management**: Add/edit/delete questions
+- ✅ **Test Configuration**: Configure mock test blueprints
+- ✅ **User Management**: View registered users
+- ✅ **Analytics Dashboard**: Platform-wide statistics
+
+### 🔐 Authentication & Security
+- ✅ **Supabase Auth**: Secure email/password authentication
+- ✅ **Google OAuth**: Sign in with Google
+- ✅ **Row Level Security**: Database-level access control
+- ✅ **Protected Routes**: Authenticated-only access
+
+---
+
+## 🚀 Live Demo
+
+**Production:** [https://taleemkasafar-chi.vercel.app](https://taleemkasafar-chi.vercel.app)
+
+**Admin Panel:** [https://taleemkasafar-chi.vercel.app/admin](https://taleemkasafar-chi.vercel.app/admin)
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **[Next.js 15](https://nextjs.org/)** - React framework with App Router and Server Components
-- **[React 19](https://react.dev/)** - UI library with latest features
-- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe development
-- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
-- **Custom Design System** - Soft Brutalist aesthetic with accessible components
-
-### Backend & Database
-- **[Supabase](https://supabase.com/)** - Backend-as-a-Service platform
-- **[PostgreSQL 17](https://www.postgresql.org/)** - Robust relational database
-- **Row Level Security (RLS)** - Database-level authorization
-- **Real-time subscriptions** - Live data updates
-
-### Development Tools
-- **[Vitest](https://vitest.dev/)** - Unit testing framework
-- **[ESLint](https://eslint.org/)** - Code linting
-- **Server Actions** - Type-safe server mutations
-- **Server Components** - Zero-bundle client JavaScript where possible
+| Category | Technology |
+|----------|-----------|
+| **Framework** | Next.js 14 (App Router) |
+| **Language** | TypeScript |
+| **Styling** | Tailwind CSS |
+| **Database** | Supabase (PostgreSQL) |
+| **Authentication** | Supabase Auth |
+| **Hosting** | Vercel |
+| **UI Components** | Radix UI, Lucide Icons |
 
 ---
 
-## 🚀 Getting Started
+## 📦 Installation
 
 ### Prerequisites
-- **Node.js** 18.x or higher
-- **npm** or **pnpm**
-- A **Supabase** account and project
+- Node.js 18+ installed
+- Supabase account (free tier works)
+- Git installed
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/huzaifa2964/taleemkasafar.git
-   cd taleemkasafar
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   
-   Create a `.env.local` file in the root directory:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_publishable_anon_key
-   ```
-
-   Get these values from your Supabase project settings:
-   - Go to **Project Settings** → **API**
-   - Copy the **Project URL** and **anon/public key**
-
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-5. **Open your browser**
-   
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
----
-
-## 📁 Project Structure
-
-```
-taleemkasafar/
-├── app/                      # Next.js App Router pages
-│   ├── (dashboard)/          # Protected dashboard routes
-│   │   ├── subjects/         # Subject browsing and practice
-│   │   ├── mock/             # Mock test engine
-│   │   ├── performance/      # Analytics dashboard
-│   │   └── page.tsx          # Home/dashboard
-│   └── auth/                 # Authentication flows
-├── components/               # React components
-│   ├── auth/                 # Sign-in, sign-up forms
-│   ├── dashboard/            # Dashboard UI components
-│   ├── quiz/                 # Quiz engine components
-│   └── ui/                   # Reusable UI primitives
-├── lib/                      # Core business logic
-│   ├── queries/              # Database query functions
-│   ├── quiz/                 # Quiz scoring & session logic
-│   └── supabase/             # Supabase client setup
-├── supabase/                 # Database migrations
-│   ├── migrations/           # Versioned SQL migrations
-│   └── config.toml           # Supabase configuration
-└── public/                   # Static assets
-```
-
----
-
-## 🗄️ Database Setup
-
-### Using Supabase CLI
-
-1. **Install Supabase CLI**
-   ```bash
-   npm install -g supabase
-   ```
-
-2. **Link to your project**
-   ```bash
-   supabase link --project-ref your-project-ref
-   ```
-
-3. **Apply migrations**
-   ```bash
-   supabase db push
-   ```
-
-4. **Generate TypeScript types**
-   ```bash
-   supabase gen types typescript --linked > lib/database.types.ts
-   ```
-
-### Database Schema
-
-The platform uses PostgreSQL with the following core tables:
-- **Catalog**: Entry tests, subjects, chapters, topics
-- **Questions**: MCQs with difficulty levels and explanations
-- **Mock Definitions**: Blueprint templates for mock tests
-- **User Progress**: Attempts, bookmarks, and performance tracking
-
-All tables use Row Level Security (RLS) to ensure users can only access their own data.
-
----
-
-## 📝 Available Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server at http://localhost:3000 |
-| `npm run build` | Create optimized production build |
-| `npm run start` | Run production server |
-| `npm run lint` | Run ESLint code quality checks |
-| `npm run test` | Run unit tests with Vitest |
-
----
-
-## 🌐 Deployment
-
-### Vercel (Recommended)
-
-1. **Push your code to GitHub**
-
-2. **Import to Vercel**
-   - Go to [vercel.com](https://vercel.com)
-   - Import your GitHub repository
-   - Add environment variables from `.env.local`
-
-3. **Configure Supabase**
-   - Add your production URL to **Supabase → Authentication → URL Configuration**
-   - Update **Site URL** and **Redirect URLs**
-
-### Environment Variables for Production
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_publishable_anon_key
-NEXT_PUBLIC_SITE_URL=https://your-domain.com
-```
-
----
-
-## 🧪 Testing
-
-Run the test suite:
-
+### 1. Clone Repository
 ```bash
-npm run test
+git clone https://github.com/huzaifamw/taleemkasafar.git
+cd taleemkasafar/Taleemkasafar
 ```
 
-Tests are written using Vitest and cover:
-- Quiz scoring logic
-- Mock test generation
-- Session state management
-- Math expression parsing
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Configure Environment
+Create `.env.local`:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-key
+GEMINI_API_KEY=your-gemini-key (optional)
+```
+
+### 4. Run Development Server
+```bash
+npm run dev
+```
+
+Visit [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 📊 Database Schema
+
+### Core Tables
+- **`entry_tests`** - Entry test definitions (NET, PU)
+- **`subjects`** - Subjects (English, Math, etc.)
+- **`chapters`** - Subject chapters
+- **`topics`** - Chapter topics
+- **`questions`** - Question bank
+- **`question_options`** - Multiple choice options
+- **`mock_test_blueprints`** - Mock test structure
+- **`mock_test_attempts`** - User test attempts
+- **`user_answers`** - Submitted answers
+
+### Views
+- **`entry_test_public`** - Public entry test catalog
+- **`mock_attempt_summary`** - Test result aggregation
+
+---
+
+## 📖 Available Entry Tests
+
+### 1. NET Engineering Test
+- **Total Questions:** 200+
+- **Subjects:** English, Math, Physics, Chemistry, IQ
+- **Mock Test:** 100 questions, 80 minutes
+- **Target:** NUST, PIEAS, GIKI, UET
+
+### 2. PU Lahore Test
+- **Total Questions:** 1,444
+- **Subjects:** English, Urdu, Math, IQ, General Knowledge
+- **Mock Test:** 100 questions, 80 minutes
+- **Target:** Punjab University admissions
+
+---
+
+## 🎯 Mock Test Structure
+
+| Subject | Questions | Marks | Time |
+|---------|-----------|-------|------|
+| English | 20 | 20 | 16 min |
+| Urdu | 20 | 20 | 16 min |
+| Mathematics | 20 | 20 | 16 min |
+| IQ | 20 | 20 | 16 min |
+| General Knowledge | 20 | 20 | 16 min |
+| **Total** | **100** | **100** | **80 min** |
+
+---
+
+## 🚀 Deployment
+
+### Deploy to Vercel
+1. Push code to GitHub
+2. Visit [vercel.com](https://vercel.com)
+3. Import repository
+4. Add environment variables
+5. Deploy!
+
+See [DEPLOYMENT-GUIDE.md](./DEPLOYMENT-GUIDE.md) for detailed instructions.
+
+---
+
+## 📚 Documentation
+
+- **[Deployment Guide](./DEPLOYMENT-GUIDE.md)** - Complete deployment instructions
+- **[Deployment Checklist](./DEPLOYMENT-CHECKLIST.md)** - Step-by-step deployment
+- **[PU Test Setup](./docs/PU_TEST_SETUP.md)** - PU test configuration
+- **[Admin Guide](./docs/PU_ADMIN_GUIDE.md)** - Admin panel usage
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
+We welcome contributions! Please:
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+---
+
+## 👥 Team
+
+**Developed by:**
+- **Huzaifa** - Lead Developer ([whuzaifa64@gmail.com](mailto:whuzaifa64@gmail.com))
+- **Salah-ul-Din** - Co-Developer ([huzaifa83941@gmail.com](mailto:huzaifa83941@gmail.com))
+
+---
+
+## 📧 Support
+
+- **Email:** whuzaifa64@gmail.com
+- **Repository:** [github.com/huzaifamw/taleemkasafar](https://github.com/huzaifamw/taleemkasafar)
+- **Issues:** [github.com/huzaifamw/taleemkasafar/issues](https://github.com/huzaifamw/taleemkasafar/issues)
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **MIT License**.
-
-```
-MIT License
-
-Copyright (c) 2026 Taleem ka Safar
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
----
-
-## 👥 Authors
-
-- **Huzaifa** - [@huzaifamw](https://github.com/huzaifamw)
-- **Salah-ul-Din** - [@salah-ul-din](https://github.com/salah-ul-din)
+This project is licensed under the MIT License.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- Built with modern React Server Components architecture
-- Powered by Supabase for authentication and data persistence
-- UI inspired by Soft Brutalist design principles
+- Supabase for database and authentication
+- Vercel for hosting
+- Next.js team for the amazing framework
+- All contributors and testers
 
 ---
 
-<div align="center">
-  <p>Made with ❤️ for students preparing for entry tests in Pakistan</p>
-  <p>
-    <a href="https://github.com/huzaifa2964/taleemkasafar/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/huzaifa2964/taleemkasafar/issues">Request Feature</a>
-  </p>
-</div>
+**Made with ❤️ in Pakistan**
