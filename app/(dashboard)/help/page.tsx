@@ -1,0 +1,30 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { DashboardHeader } from "@/components/dashboard/header";
+import { getEntryTestsCached } from "@/lib/queries/catalog";
+import { getActiveEntryTest } from "@/lib/queries/entry-test";
+import { getDisplayName } from "@/lib/queries/profile";
+
+const guides = [
+  { icon: "menu_book", title: "Practice by chapter", text: "Choose Subjects, open a chapter, and start a focused practice or past-paper session.", link: "/subjects", action: "Open subjects" },
+  { icon: "timer", title: "Attempt a mock test", text: "Use Mock Tests for a timed simulation. Answers are saved while you move through the paper.", link: "/mock", action: "View mock tests" },
+  { icon: "psychology", title: "Understand your insights", text: "AI Insights turns completed attempts into strengths, weak areas, and recommended next steps.", link: "/insights", action: "View insights" },
+  { icon: "monitoring", title: "Track performance", text: "Performance shows your history and makes it easier to see whether accuracy is improving.", link: "/performance", action: "See performance" },
+];
+
+const faqs = [
+  ["Why is my mock test not appearing?", "Confirm that the correct entry test is selected in the page header. Only active mock tests configured for that entry test are shown."],
+  ["Are my answers saved during a mock?", "Yes. Selections are saved as you work through the test. Keep the page open and use the submission button when you finish."],
+  ["When are AI Insights available?", "Insights are generated from completed attempt data. Finish a mock test first, then open AI Insights to request an analysis when your quota is available."],
+  ["How do I change my active entry test?", "Use the entry-test selector in the center of the dashboard header. Your selection is saved to your profile."],
+  ["Can I change my name?", "Yes. Open Settings from the sidebar and update your display name. The new name will appear across your dashboard."],
+  ["What should I do if a question seems incorrect?", "Note the subject, chapter, and question wording. Then use the support link below to send the details privately to the team."],
+];
+
+export default async function HelpPage() {
+  const [activeTest, tests, displayName] = await Promise.all([getActiveEntryTest(), getEntryTestsCached(), getDisplayName()]);
+  if (!activeTest) redirect("/auth/login");
+  return <><DashboardHeader title="Help Center" badge="Student support" displayName={displayName} tests={tests} activeTestId={activeTest.id} /><main className="px-6 pb-24 pt-28 md:px-8"><div className="mx-auto max-w-6xl space-y-14"><section className="landing-grid border-2 border-black bg-brand-fixed p-7 shadow-hard md:p-10"><div className="max-w-3xl"><div className="inline-flex border-2 border-black bg-white px-3 py-2 font-headline text-xs font-bold uppercase">Help Center</div><h1 className="mt-6 font-headline text-4xl font-bold uppercase leading-none tracking-tight md:text-6xl">Find an answer.<br /><span className="italic text-brand">Keep moving.</span></h1><p className="mt-5 max-w-2xl text-lg font-medium leading-relaxed text-on-surface-variant">Quick guidance for using your dashboard, practising effectively, and solving common account issues.</p></div></section><section><SectionTitle eyebrow="Getting started" title="Popular guides" /><div className="mt-7 grid gap-5 md:grid-cols-2">{guides.map((guide) => <article key={guide.title} className="flex flex-col border-2 border-black bg-white p-6 shadow-hard-sm"><span className="material-symbols-outlined text-4xl text-brand">{guide.icon}</span><h2 className="mt-5 font-headline text-xl font-bold uppercase">{guide.title}</h2><p className="mt-2 flex-1 leading-relaxed text-on-surface-variant">{guide.text}</p><Link href={guide.link} className="mt-5 inline-flex items-center gap-2 font-headline text-xs font-bold uppercase text-brand">{guide.action}<span className="material-symbols-outlined text-lg">arrow_forward</span></Link></article>)}</div></section><section><SectionTitle eyebrow="Common questions" title="Frequently asked" /><div className="mt-7 border-t-2 border-black">{faqs.map(([question, answer], index) => <details key={question} className="group border-b-2 border-black"><summary className="flex cursor-pointer list-none items-center justify-between gap-5 py-6 font-headline text-lg font-bold uppercase"><span><span className="mr-4 text-sm text-brand">{String(index + 1).padStart(2, "0")}</span>{question}</span><span className="material-symbols-outlined transition-transform group-open:rotate-45">add</span></summary><p className="max-w-3xl pb-7 pl-10 pr-8 leading-relaxed text-on-surface-variant">{answer}</p></details>)}</div></section><section className="grid border-2 border-black bg-black text-white shadow-hard lg:grid-cols-[1fr_auto] lg:items-center"><div className="p-7 md:p-9"><p className="font-headline text-xs font-bold uppercase tracking-[0.2em] text-[#9db9ff]">Still need help?</p><h2 className="mt-3 font-headline text-3xl font-bold uppercase md:text-4xl">Tell us what went wrong.</h2><p className="mt-4 max-w-2xl leading-relaxed text-white/65">Describe the problem, include the page or question involved, and share the email connected to your account. Your message goes privately to the admin feedback inbox.</p></div><div className="border-t-2 border-white/30 p-7 lg:border-l-2 lg:border-t-0"><Link href="/#feedback" className="inline-flex items-center gap-3 border-2 border-white bg-brand px-6 py-5 font-headline text-sm font-bold uppercase shadow-[4px_4px_0_0_#fff] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none">Submit a problem<span className="material-symbols-outlined">arrow_outward</span></Link></div></section></div></main></>;
+}
+
+function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) { return <div><p className="font-headline text-xs font-bold uppercase tracking-[0.2em] text-brand">{eyebrow}</p><h2 className="mt-2 font-headline text-3xl font-bold uppercase md:text-4xl">{title}</h2></div>; }
