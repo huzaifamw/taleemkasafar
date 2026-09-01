@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FeedbackForm } from "@/components/landing/feedback-form";
 import { CountUpStats, FAQ, LiveActivity, LogoMarquee, ProductDemo } from "@/components/landing/live-components";
+import { getPublishedBlogs } from "@/lib/queries/blogs";
 
 const features = [
   { icon: "quiz", number: "01", title: "Chapter practice", text: "Build confidence one topic at a time with focused MCQs and instant results." },
@@ -8,13 +9,8 @@ const features = [
   { icon: "psychology", number: "03", title: "AI study insights", text: "Turn every attempt into a clear plan with strengths, weak areas, and next steps." },
 ];
 
-const posts = [
-  { tag: "Study smart", read: "5 min read", title: "The 25-minute focus method that actually works", text: "A practical routine for covering difficult chapters without burning out.", color: "bg-brand-fixed", icon: "timer" },
-  { tag: "Entry tests", read: "7 min read", title: "How to review a mock test the right way", text: "Your score is only the start. Learn what to do after every practice attempt.", color: "bg-[#ffe8a3]", icon: "fact_check" },
-  { tag: "Wellbeing", read: "4 min read", title: "Calm your mind before exam day", text: "Simple habits to protect your sleep, focus, and confidence during preparation.", color: "bg-[#c8f4d4]", icon: "self_improvement" },
-];
-
-export default function LandingPage() {
+export default async function LandingPage() {
+  const posts = (await getPublishedBlogs()).slice(0, 3);
   return (
     <main className="min-h-screen overflow-hidden bg-surface font-body text-on-surface">
       <header className="sticky top-0 z-50 border-b-2 border-black bg-white/95 backdrop-blur">
@@ -26,7 +22,7 @@ export default function LandingPage() {
           <nav className="hidden items-center gap-8 font-headline text-sm font-bold uppercase md:flex">
             <a href="#features" className="hover:text-brand">How it works</a>
             <a href="#stories" className="hover:text-brand">Stories</a>
-            <a href="#blogs" className="hover:text-brand">Study tips</a>
+            <Link href="/blogs" className="hover:text-brand">Study tips</Link>
           </nav>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link href="/auth/login" className="px-3 py-3 font-headline text-xs font-bold uppercase hover:text-brand sm:px-4 sm:text-sm">Sign in</Link>
@@ -93,11 +89,11 @@ export default function LandingPage() {
       <section id="blogs" className="mx-auto max-w-7xl px-5 py-20 md:px-8 md:py-28">
         <div className="mb-12 flex items-end justify-between gap-6"><div><p className="font-headline text-sm font-bold uppercase tracking-[0.2em] text-brand">From the study desk</p><h2 className="mt-3 font-headline text-4xl font-bold uppercase md:text-6xl">Tips that help.</h2></div><span className="hidden border-b-2 border-black pb-1 font-headline text-sm font-bold uppercase md:block">Fresh ideas weekly</span></div>
         <div className="grid gap-6 md:grid-cols-3">
-          {posts.map((post) => <article key={post.title} className="group border-2 border-black bg-white shadow-hard"><div className={`flex h-48 items-center justify-center border-b-2 border-black ${post.color}`}><span className="material-symbols-outlined text-7xl transition-transform group-hover:scale-110">{post.icon}</span></div><div className="p-6"><div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-on-surface-variant"><span>{post.tag}</span><span>{post.read}</span></div><h3 className="mt-5 font-headline text-2xl font-bold uppercase leading-tight">{post.title}</h3><p className="mt-3 leading-relaxed text-on-surface-variant">{post.text}</p><span className="mt-6 inline-flex items-center gap-2 font-headline text-sm font-bold uppercase text-brand">Read article <span className="material-symbols-outlined text-lg">arrow_outward</span></span></div></article>)}
+          {posts.map((post, index) => <article key={post.title} className="group border-2 border-black bg-white shadow-hard"><Link href={`/blogs/${post.slug}`} className={`landing-grid flex h-48 items-center justify-center border-b-2 border-black ${index === 1 ? "bg-[#ffe8a3]" : index === 2 ? "bg-[#c8f4d4]" : "bg-brand-fixed"}`}><span className="material-symbols-outlined text-7xl transition-transform group-hover:scale-110">{index === 1 ? "fact_check" : index === 2 ? "self_improvement" : "menu_book"}</span></Link><div className="p-6"><div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-on-surface-variant"><span>{post.category}</span><span>{Math.max(3, Math.ceil(post.content.trim().split(/\s+/).length / 210))} min read</span></div><h3 className="mt-5 font-headline text-2xl font-bold uppercase leading-tight"><Link href={`/blogs/${post.slug}`} className="hover:text-brand">{post.title}</Link></h3><p className="mt-3 leading-relaxed text-on-surface-variant">{post.excerpt}</p><Link href={`/blogs/${post.slug}`} className="mt-6 inline-flex items-center gap-2 font-headline text-sm font-bold uppercase text-brand">Read article <span className="material-symbols-outlined text-lg">arrow_outward</span></Link></div></article>)}
         </div>
       </section>
 
-      <section className="border-y-2 border-black bg-surface-high">
+      <section id="feedback" className="scroll-mt-24 border-y-2 border-black bg-surface-high">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 md:px-8 lg:grid-cols-2 lg:items-center">
           <div><div className="inline-flex border-2 border-black bg-[#ffe8a3] px-3 py-2 font-headline text-xs font-bold uppercase">Your voice matters</div><h2 className="mt-6 font-headline text-4xl font-bold uppercase leading-none md:text-6xl">Help us build it better.</h2><p className="mt-6 max-w-lg text-lg font-medium leading-relaxed text-on-surface-variant">Found something confusing? Have a feature idea? Tell us. Taleem ka Safar should grow with the students who use it.</p></div>
           <FeedbackForm />
@@ -111,7 +107,7 @@ export default function LandingPage() {
 
       <section className="bg-brand-fixed px-5 py-20 text-center md:px-8 md:py-28"><span className="material-symbols-outlined text-6xl text-brand">school</span><h2 className="mx-auto mt-5 max-w-4xl font-headline text-4xl font-bold uppercase leading-none tracking-tight md:text-7xl">Your next score starts today.</h2><p className="mx-auto mt-5 max-w-xl text-lg font-medium text-on-surface-variant">Join the students turning daily practice into real progress.</p><Link href="/auth/sign-up" className="mt-8 inline-flex items-center gap-3 border-2 border-black bg-black px-8 py-5 font-headline text-lg font-bold uppercase text-white shadow-hard transition-all hover:translate-x-1 hover:translate-y-1 hover:bg-brand hover:shadow-none">Create free account <span className="material-symbols-outlined">arrow_forward</span></Link></section>
 
-      <footer className="border-t-2 border-black bg-black text-white"><div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-10 md:flex-row md:items-center md:justify-between md:px-8"><div><p className="font-headline text-xl font-bold">Taleem ka Safar</p><p className="mt-1 text-xs uppercase tracking-widest text-white/50">Every question takes you forward.</p></div><div className="flex flex-wrap gap-6 font-headline text-xs font-bold uppercase"><a href="#features">Platform</a><a href="#blogs">Study tips</a><a href="#stories">Feedback</a></div><p className="text-xs text-white/50">© 2026 Taleem ka Safar</p></div></footer>
+      <footer className="border-t-2 border-black bg-black text-white"><div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-10 md:flex-row md:items-center md:justify-between md:px-8"><div><p className="font-headline text-xl font-bold">Taleem ka Safar</p><p className="mt-1 text-xs uppercase tracking-widest text-white/50">Every question takes you forward.</p></div><div className="flex flex-wrap gap-6 font-headline text-xs font-bold uppercase"><a href="#features">Platform</a><Link href="/blogs">Study tips</Link><a href="#stories">Feedback</a></div><p className="text-xs text-white/50">© 2026 Taleem ka Safar</p></div></footer>
     </main>
   );
 }
