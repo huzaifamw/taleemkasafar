@@ -12,6 +12,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/entry-tests", label: "Tests", icon: "school" },
   { href: "/admin/questions", label: "Questions", icon: "quiz" },
   { href: "/admin/blogs", label: "Blogs", icon: "article" },
+  { href: "/admin/feedback", label: "Feedback", icon: "forum" },
 ];
 
 function isActive(pathname: string, href: string) {
