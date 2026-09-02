@@ -33,6 +33,15 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  const pathname = request.nextUrl.pathname;
+
+  // The landing page and published blog pages never need session state.
+  // Return before creating a Supabase client or validating JWT claims so these
+  // public pages stay on the fast path.
+  if (pathname === "/" || pathname.startsWith("/blogs")) {
+    return supabaseResponse;
+  }
+
   // With Fluid compute, don't put this client in a global environment
   // variable. Always create a new one on each request.
   const supabase = createServerClient(
@@ -67,12 +76,8 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
-  const pathname = request.nextUrl.pathname;
-
   // Public routes that do NOT require authentication.
   const isPublicRoute =
-    pathname === "/" ||
-    pathname.startsWith("/blogs") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/login");
 

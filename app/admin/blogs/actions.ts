@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { BLOGS_CACHE_TAG } from "@/lib/queries/blogs";
 
 export type BlogActionState = { error: string | null };
 const allowedStatuses = new Set(["draft", "published", "archived"]);
@@ -53,7 +54,7 @@ export async function createBlogAction(_previous: BlogActionState, form: FormDat
   const { data, error } = await context.supabase.from("blogs").insert({ ...payload, author_id: context.adminId, published_at: payload.status === "published" ? new Date().toISOString() : null }).select("id").single();
   if (error || !data) return { error: error?.code === "23505" ? "That URL slug is already in use." : error?.message ?? "Could not create article." };
   try { await syncCategory(data.id, category, context); } catch (syncError) { return { error: syncError instanceof Error ? syncError.message : "Article created, but category could not be saved." }; }
-  revalidatePath("/blogs"); revalidatePath("/admin/blogs"); redirect("/admin/blogs");
+  revalidateTag(BLOGS_CACHE_TAG, "max"); revalidatePath("/blogs"); revalidatePath("/admin/blogs"); redirect("/admin/blogs");
 }
 
 export async function updateBlogAction(id: string, _previous: BlogActionState, form: FormData): Promise<BlogActionState> {
@@ -65,12 +66,12 @@ export async function updateBlogAction(id: string, _previous: BlogActionState, f
   const { error } = await context.supabase.from("blogs").update({ ...payload, published_at: publishedAt }).eq("id", id);
   if (error) return { error: error.code === "23505" ? "That URL slug is already in use." : error.message };
   try { await syncCategory(id, category, context); } catch (syncError) { return { error: syncError instanceof Error ? syncError.message : "Category could not be saved." }; }
-  revalidatePath("/blogs"); revalidatePath(`/blogs/${payload.slug}`); revalidatePath("/admin/blogs"); redirect("/admin/blogs");
+  revalidateTag(BLOGS_CACHE_TAG, "max"); revalidatePath("/blogs"); revalidatePath(`/blogs/${payload.slug}`); revalidatePath("/admin/blogs"); redirect("/admin/blogs");
 }
 
 export async function deleteBlogAction(id: string): Promise<{ error?: string }> {
   const context = await adminContext(); if (!context) return { error: "Admin access required." };
   const { error } = await context.supabase.from("blogs").delete().eq("id", id);
   if (error) return { error: error.message };
-  revalidatePath("/blogs"); revalidatePath("/admin/blogs"); return {};
+  revalidateTag(BLOGS_CACHE_TAG, "max"); revalidatePath("/blogs"); revalidatePath("/admin/blogs"); return {};
 }

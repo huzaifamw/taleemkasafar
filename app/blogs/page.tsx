@@ -5,6 +5,8 @@ import { BlogFooter, BlogHeader } from "@/components/blogs/blog-header";
 import { NewsletterForm } from "@/components/blogs/newsletter-form";
 import { getPublishedBlogs } from "@/lib/queries/blogs";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "The Study Desk | Taleem ka Safar",
   description: "Practical study advice, entry-test strategies, and student wellbeing guides from Taleem ka Safar.",

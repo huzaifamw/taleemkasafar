@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useMemo, useState } from "react";
-import type { PublicBlog } from "@/lib/queries/blogs";
+import type { PublicBlogSummary } from "@/lib/queries/blogs";
 
 const categories = ["All", "Study Smart", "Entry Tests", "Exam Strategy", "Wellbeing"] as const;
 
-export function BlogExplorer({ posts }: { posts: PublicBlog[] }) {
+export function BlogExplorer({ posts }: { posts: PublicBlogSummary[] }) {
   const [category, setCategory] = useState<(typeof categories)[number]>("All");
   const [query, setQuery] = useState("");
 
@@ -40,15 +41,15 @@ export function BlogExplorer({ posts }: { posts: PublicBlog[] }) {
   );
 }
 
-function BlogCard({ post, index }: { post: PublicBlog; index: number }) {
+function BlogCard({ post, index }: { post: PublicBlogSummary; index: number }) {
   const color = categoryColor(post.category);
   const icon = categoryIcon(post.category);
-  const readTime = `${Math.max(3, Math.ceil(post.content.trim().split(/\s+/).length / 210))} min read`;
+  const readTime = "5 min read";
   const date = new Intl.DateTimeFormat("en-PK", { dateStyle: "medium" }).format(new Date(post.published_at ?? post.created_at));
   return (
     <article className="group flex h-full flex-col border-2 border-black bg-white shadow-hard transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0_0_#0058be]">
       <Link href={`/blogs/${post.slug}`} className={`relative flex h-52 items-center justify-center overflow-hidden border-b-2 border-black ${color}`} aria-label={`Read ${post.title}`}>
-        {post.featured_image_url ? <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${post.featured_image_url})` }} /> : <div className="landing-grid absolute inset-0 opacity-60" />}<span className="absolute left-4 top-4 border-2 border-black bg-white px-2 py-1 font-headline text-[10px] font-bold uppercase">Article / {String(index + 1).padStart(2, "0")}</span>{!post.featured_image_url && <span className="material-symbols-outlined relative text-7xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">{icon}</span>}
+        {post.featured_image_url ? <Image src={post.featured_image_url} alt="" fill sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" className="object-cover" /> : <div className="landing-grid absolute inset-0 opacity-60" />}<span className="absolute left-4 top-4 border-2 border-black bg-white px-2 py-1 font-headline text-[10px] font-bold uppercase">Article / {String(index + 1).padStart(2, "0")}</span>{!post.featured_image_url && <span className="material-symbols-outlined relative text-7xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">{icon}</span>}
       </Link>
       <div className="flex flex-1 flex-col p-6"><div className="flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-wider text-on-surface-variant"><span className="text-brand">{post.category}</span><span>{readTime}</span></div><h3 className="mt-5 font-headline text-2xl font-bold uppercase leading-tight"><Link href={`/blogs/${post.slug}`} className="hover:text-brand">{post.title}</Link></h3><p className="mt-3 flex-1 leading-relaxed text-on-surface-variant">{post.excerpt}</p><div className="mt-7 flex items-center justify-between border-t-2 border-black pt-4"><span className="text-xs font-semibold">{date}</span><Link href={`/blogs/${post.slug}`} className="flex items-center gap-1 font-headline text-xs font-bold uppercase text-brand">Read <span className="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span></Link></div></div>
     </article>
