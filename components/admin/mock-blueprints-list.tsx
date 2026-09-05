@@ -93,7 +93,7 @@ export function MockBlueprintsList({
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <p className="text-gray-600">Duration</p>
                   <p className="font-semibold text-gray-900">
@@ -103,6 +103,12 @@ export function MockBlueprintsList({
                 <div>
                   <p className="text-gray-600">Total Questions</p>
                   <p className="font-semibold text-gray-900">{blueprint.total_questions}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Total Marks</p>
+                  <p className="font-semibold text-gray-900">
+                    {blueprint.total_questions * Number(blueprint.marks_per_correct)}
+                  </p>
                 </div>
               </div>
 

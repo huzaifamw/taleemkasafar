@@ -10,6 +10,10 @@ export type MockBlueprintSummary = {
   description: string | null;
   durationSeconds: number;
   totalQuestions: number;
+  marksPerCorrect: number;
+  marksPerIncorrect: number;
+  marksPerUnanswered: number;
+  maximumMarks: number;
 };
 
 export type MockResultSummary = {
@@ -35,7 +39,9 @@ export async function getMockLanding(): Promise<MockLandingData | null> {
 
   const { data: bp } = await supabase
     .from("mock_test_blueprints")
-    .select("id, name, description, duration_seconds, total_questions")
+    .select(
+      "id, name, description, duration_seconds, total_questions, marks_per_correct, marks_per_incorrect, marks_per_unanswered",
+    )
     .eq("entry_test_id", entryTest.id)
     .eq("is_active", true)
     .order("display_order", { ascending: true })
@@ -49,6 +55,10 @@ export async function getMockLanding(): Promise<MockLandingData | null> {
         description: bp.description,
         durationSeconds: bp.duration_seconds,
         totalQuestions: bp.total_questions,
+        marksPerCorrect: Number(bp.marks_per_correct),
+        marksPerIncorrect: Number(bp.marks_per_incorrect),
+        marksPerUnanswered: Number(bp.marks_per_unanswered),
+        maximumMarks: bp.total_questions * Number(bp.marks_per_correct),
       }
     : null;
 
@@ -204,6 +214,8 @@ export type MockResultDetail = {
   incorrectCount: number;
   skippedCount: number;
   scorePercent: number;
+  earnedMarks: number;
+  maximumMarks: number;
   perSubject: Record<string, { correct: number; total: number }>;
   submittedAt: string | null;
 };
@@ -220,12 +232,25 @@ export async function getMockResult(
   const { data } = await supabase
     .from("mock_results")
     .select(
-      "attempt_id, total_questions, attempted_count, correct_count, incorrect_count, skipped_count, score_percent, per_subject, attempts!inner(submitted_at, user_id)",
+      "attempt_id, total_questions, attempted_count, correct_count, incorrect_count, skipped_count, score_percent, per_subject, attempts!inner(submitted_at, user_id, mock_test_blueprints(marks_per_correct, marks_per_incorrect, marks_per_unanswered))",
     )
     .eq("attempt_id", attemptId)
     .eq("attempts.user_id", viewer.id)
     .maybeSingle();
   if (!data) return null;
+
+  const attempt = data.attempts as {
+    submitted_at: string | null;
+    mock_test_blueprints: {
+      marks_per_correct: number;
+      marks_per_incorrect: number;
+      marks_per_unanswered: number;
+    } | null;
+  } | null;
+  const scoring = attempt?.mock_test_blueprints;
+  const marksPerCorrect = Number(scoring?.marks_per_correct ?? 1);
+  const marksPerIncorrect = Number(scoring?.marks_per_incorrect ?? 0);
+  const marksPerUnanswered = Number(scoring?.marks_per_unanswered ?? 0);
 
   return {
     attemptId: data.attempt_id,
@@ -235,14 +260,17 @@ export async function getMockResult(
     incorrectCount: data.incorrect_count,
     skippedCount: data.skipped_count,
     scorePercent: Number(data.score_percent),
+    earnedMarks:
+      data.correct_count * marksPerCorrect +
+      data.incorrect_count * marksPerIncorrect +
+      data.skipped_count * marksPerUnanswered,
+    maximumMarks: data.total_questions * marksPerCorrect,
     perSubject:
       (data.per_subject as Record<
         string,
         { correct: number; total: number }
       >) ?? {},
-    submittedAt:
-      (data.attempts as { submitted_at: string | null } | null)
-        ?.submitted_at ?? null,
+    submittedAt: attempt?.submitted_at ?? null,
   };
 }
 

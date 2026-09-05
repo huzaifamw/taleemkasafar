@@ -26,7 +26,7 @@ export const getEntryTestsCached = unstable_cache(
       (t): t is EntryTest => !!t.id && !!t.slug && !!t.name,
     );
   },
-  ["entry-tests-cached"],
+  ["entry-tests-cached-v2"],
   { tags: [CATALOG_TAG] }
 );
 
@@ -42,11 +42,6 @@ export const getSubjectsCached = unstable_cache(
       .select("*")
       .eq("entry_test_slug", testSlug)
       .order("display_order", { ascending: true });
-
-    if (testSlug !== "pu") {
-      const { data } = await subjectsQuery;
-      return data ?? [];
-    }
 
     const [{ data: subjects }, { data: populatedChapters }] = await Promise.all([
       subjectsQuery,
@@ -73,7 +68,7 @@ export const getSubjectsCached = unstable_cache(
         : 0,
     }));
   },
-  ["subjects-cached"],
+  ["subjects-cached-v2"],
   { 
     tags: [CATALOG_TAG],
     revalidate: 3600 // 1 hour
@@ -94,10 +89,11 @@ export const getChaptersCached = unstable_cache(
       .select("*")
       .eq("entry_test_slug", testSlug)
       .eq("subject_slug", subjectSlug)
+      .gt("question_count", 0)
       .order("display_order", { ascending: true });
     return data ?? [];
   },
-  ["chapters-cached"],
+  ["chapters-cached-v2"],
   { 
     tags: [CATALOG_TAG],
     revalidate: 3600 // 1 hour

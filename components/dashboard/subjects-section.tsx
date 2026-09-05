@@ -8,7 +8,9 @@ import { cardIndex } from "@/lib/queries/dashboard-helpers";
 const SUBJECT_META: Record<string, { icon: string; tagline: string }> = {
   english: { icon: "menu_book", tagline: "Grammar, vocabulary & comprehension" },
   maths: { icon: "calculate", tagline: "Algebra, calculus & more" },
+  mathematics: { icon: "calculate", tagline: "Algebra, calculus & problem solving" },
   physics: { icon: "bolt", tagline: "Mechanics, waves & modern physics" },
+  chemistry: { icon: "science", tagline: "Physical, organic & inorganic chemistry" },
 };
 
 function meta(slug: string) {

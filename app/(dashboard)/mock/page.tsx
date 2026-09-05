@@ -68,7 +68,21 @@ async function MockLandingView() {
                     Duration
                   </div>
                 </div>
+                <div>
+                  <div className="text-3xl font-bold tabular-nums">
+                    {data.blueprint.maximumMarks}
+                  </div>
+                  <div className="text-xs uppercase tracking-widest text-white/60">
+                    Total Marks
+                  </div>
+                </div>
               </div>
+              <p className="mb-6 text-xs font-bold uppercase tracking-widest text-white/60">
+                +{data.blueprint.marksPerCorrect} correct
+                {data.blueprint.marksPerIncorrect < 0
+                  ? ` · ${data.blueprint.marksPerIncorrect} incorrect`
+                  : " · No negative marking"}
+              </p>
               <StartMockButton blueprintId={data.blueprint.id} />
             </section>
           ) : (

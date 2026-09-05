@@ -20,6 +20,9 @@ export function MockResult({ result }: { result: MockResultDetail }) {
             {result.correctCount} / {result.totalQuestions} correct
           </span>
         </div>
+        <div className="mt-3 font-headline text-lg font-bold text-brand-fixed">
+          {result.earnedMarks} / {result.maximumMarks} marks
+        </div>
         <div className="mt-6 flex flex-wrap gap-6 font-headline">
           <Stat label="Correct" value={result.correctCount} tone="text-[#4ade80]" />
           <Stat label="Incorrect" value={result.incorrectCount} tone="text-[#f87171]" />

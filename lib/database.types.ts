@@ -695,6 +695,9 @@ export type Database = {
           external_id: string | null
           id: string
           is_active: boolean
+          marks_per_correct: number
+          marks_per_incorrect: number
+          marks_per_unanswered: number
           name: string
           total_questions: number
           updated_at: string
@@ -708,6 +711,9 @@ export type Database = {
           external_id?: string | null
           id?: string
           is_active?: boolean
+          marks_per_correct?: number
+          marks_per_incorrect?: number
+          marks_per_unanswered?: number
           name: string
           total_questions: number
           updated_at?: string
@@ -721,6 +727,9 @@ export type Database = {
           external_id?: string | null
           id?: string
           is_active?: boolean
+          marks_per_correct?: number
+          marks_per_incorrect?: number
+          marks_per_unanswered?: number
           name?: string
           total_questions?: number
           updated_at?: string
