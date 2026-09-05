@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { getViewerContext } from "./profile";
 
 export type EntryTest = {
   id: string;
@@ -17,26 +18,19 @@ export type EntryTest = {
  */
 export const getActiveEntryTest = cache(
   async (): Promise<EntryTest | null> => {
+    const viewer = await getViewerContext();
+    if (!viewer) return null;
+
     const supabase = await createClient();
 
-    const { data: claims } = await supabase.auth.getClaims();
-    const userId = claims?.claims?.sub as string | undefined;
-
-    if (userId) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("selected_test_id")
-        .eq("id", userId)
+    if (viewer.selectedTestId) {
+      const { data } = await supabase
+        .from("entry_tests")
+        .select("id, slug, name")
+        .eq("id", viewer.selectedTestId)
+        .eq("is_active", true)
         .maybeSingle();
-
-      if (profile?.selected_test_id) {
-        const { data } = await supabase
-          .from("entry_tests")
-          .select("id, slug, name")
-          .eq("id", profile.selected_test_id)
-          .maybeSingle();
-        if (data) return data;
-      }
+      if (data) return data;
     }
 
     const { data } = await supabase

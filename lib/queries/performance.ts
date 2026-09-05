@@ -1,6 +1,8 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveEntryTest } from "./entry-test";
 import { listMockResults, type MockResultSummary } from "./mock";
+import { getViewerContext } from "./profile";
 
 export type PracticeAccuracy = {
   answered: number;
@@ -21,20 +23,24 @@ export type PerformanceData = {
  * RLS (cookie client).
  */
 export async function getPerformance(): Promise<PerformanceData | null> {
+  const viewer = await getViewerContext();
+  if (!viewer) return null;
+
   const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  const userId = claims?.claims?.sub as string | undefined;
-  if (!userId) return null;
+  const entryTest = await getActiveEntryTest();
+  if (!entryTest) return null;
 
-  const mockResults = await listMockResults(50);
-
-  // Practice accuracy: graded practice answers across the user's practice
-  // attempts. is_correct is set by the grading RPC at answer time.
-  const { data: practiceAttempts } = await supabase
-    .from("attempts")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("mode", "practice");
+  // Practice accuracy for the selected test. is_correct is set by the grading
+  // RPC at answer time.
+  const [mockResults, { data: practiceAttempts }] = await Promise.all([
+    listMockResults(50, entryTest.id),
+    supabase
+      .from("attempts")
+      .select("id")
+      .eq("user_id", viewer.id)
+      .eq("entry_test_id", entryTest.id)
+      .eq("mode", "practice"),
+  ]);
   const attemptIds = (practiceAttempts ?? []).map((a) => a.id);
 
   let answered = 0;

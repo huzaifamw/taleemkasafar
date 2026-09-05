@@ -10,19 +10,18 @@ export default async function AdminLoginPage() {
   const supabase = await createClient();
 
   // Check if user is already authenticated and is an admin
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
+  const userId = data?.claims?.sub as string | undefined;
+  const userEmail = data?.claims?.email as string | undefined;
 
   // If user is logged in, check if they're an admin
-  const currentUser = user;
-  if (user) {
+  if (userId) {
     const { data: adminData } = await supabase
       .from("admins")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("is_active", true)
-      .single();
+      .maybeSingle();
 
     if (adminData) {
       // Already logged in as admin, redirect to dashboard
@@ -43,14 +42,14 @@ export default async function AdminLoginPage() {
             </p>
           </div>
           
-          {currentUser && (
+          {userId && (
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
               <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> You're currently logged in as {currentUser.email}.
+                <strong>Note:</strong> You are currently logged in as {userEmail ?? "another account"}.
                 <br />
                 If this is not an admin account, please sign out first.
               </p>
-              <form action="/auth/sign-out" method="post" className="mt-3">
+              <form action="/admin-auth/logout" method="post" className="mt-3">
                 <button
                   type="submit"
                   className="text-sm text-blue-600 hover:text-blue-700 underline"

@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveEntryTest } from "./entry-test";
+import { getViewerContext } from "./profile";
 import type { QuizQuestion } from "./practice";
 
 export type MockBlueprintSummary = {
@@ -51,7 +52,7 @@ export async function getMockLanding(): Promise<MockLandingData | null> {
       }
     : null;
 
-  const recentResults = await listMockResults(8);
+  const recentResults = await listMockResults(8, entryTest.id);
 
   return {
     entryTestName: entryTest.name,
@@ -61,21 +62,29 @@ export async function getMockLanding(): Promise<MockLandingData | null> {
 }
 
 /** The user's submitted mock results, most recent first. */
-export async function listMockResults(limit = 20): Promise<MockResultSummary[]> {
+export async function listMockResults(
+  limit = 20,
+  entryTestId?: string,
+): Promise<MockResultSummary[]> {
+  const viewer = await getViewerContext();
+  if (!viewer) return [];
+
   const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  const userId = claims?.claims?.sub as string | undefined;
-  if (!userId) return [];
 
   // mock_results -> attempt (owned by user). RLS already scopes to the owner.
-  const { data } = await supabase
+  let query = supabase
     .from("mock_results")
     .select(
       "attempt_id, score_percent, correct_count, total_questions, attempts!inner(submitted_at, user_id)",
     )
-    .eq("attempts.user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .eq("attempts.user_id", viewer.id)
+    .order("created_at", { ascending: false });
+
+  if (entryTestId) {
+    query = query.eq("attempts.entry_test_id", entryTestId);
+  }
+
+  const { data } = await query.limit(limit);
 
   return (data ?? []).map((r) => ({
     attemptId: r.attempt_id,
@@ -107,16 +116,16 @@ export type MockAttemptData = {
 export async function getMockAttempt(
   attemptId: string,
 ): Promise<MockAttemptData | null> {
+  const viewer = await getViewerContext();
+  if (!viewer) return null;
+
   const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  const userId = claims?.claims?.sub as string | undefined;
-  if (!userId) return null;
 
   const { data: attempt } = await supabase
     .from("attempts")
     .select("id, status, expires_at, user_id, mode")
     .eq("id", attemptId)
-    .eq("user_id", userId)
+    .eq("user_id", viewer.id)
     .eq("mode", "mock")
     .maybeSingle();
   if (!attempt) return null;
@@ -203,10 +212,10 @@ export type MockResultDetail = {
 export async function getMockResult(
   attemptId: string,
 ): Promise<MockResultDetail | null> {
+  const viewer = await getViewerContext();
+  if (!viewer) return null;
+
   const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  const userId = claims?.claims?.sub as string | undefined;
-  if (!userId) return null;
 
   const { data } = await supabase
     .from("mock_results")
@@ -214,7 +223,7 @@ export async function getMockResult(
       "attempt_id, total_questions, attempted_count, correct_count, incorrect_count, skipped_count, score_percent, per_subject, attempts!inner(submitted_at, user_id)",
     )
     .eq("attempt_id", attemptId)
-    .eq("attempts.user_id", userId)
+    .eq("attempts.user_id", viewer.id)
     .maybeSingle();
   if (!data) return null;
 

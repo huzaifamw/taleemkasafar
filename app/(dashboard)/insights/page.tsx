@@ -1,10 +1,8 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { getLatestAIAnalysis, getAIAnalysisHistory } from "@/lib/queries/insights";
 import { getActiveEntryTest } from "@/lib/queries/entry-test";
 import { getEntryTestsCached } from "@/lib/queries/catalog";
-import { getDisplayName } from "@/lib/queries/profile";
+import { getDisplayName, getViewerContext } from "@/lib/queries/profile";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { AIAnalysisCard } from "@/components/insights/ai-analysis-card";
 import { StrengthsSection } from "@/components/insights/strengths-section";
@@ -22,13 +20,8 @@ export const metadata = {
 };
 
 export default async function InsightsPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  const viewer = await getViewerContext();
+  if (!viewer) {
     redirect("/auth/login");
   }
 

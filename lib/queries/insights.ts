@@ -1,5 +1,7 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/database.types";
+import { getViewerContext } from "./profile";
 
 export type AIAnalysis = {
   id: string;
@@ -43,38 +45,24 @@ export type AIAnalysis = {
  * Get the most recent AI analysis for current user
  */
 export const getLatestAIAnalysis = cache(async (): Promise<AIAnalysis | null> => {
-  const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data, error } = await supabase
-    .from('ai_performance_analysis')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !data) return null;
-
-  return mapAnalysisData(data);
+  const history = await getAIAnalysisHistory();
+  return history[0] ?? null;
 });
 
 /**
  * Get AI analysis for a specific attempt
  */
 export const getAIAnalysisByAttempt = cache(async (attemptId: string): Promise<AIAnalysis | null> => {
-  const supabase = await createClient();
+  const viewer = await getViewerContext();
+  if (!viewer) return null;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('ai_performance_analysis')
     .select('*')
     .eq('attempt_id', attemptId)
-    .eq('user_id', user.id)
+    .eq('user_id', viewer.id)
     .maybeSingle();
 
   if (error || !data) return null;
@@ -86,15 +74,15 @@ export const getAIAnalysisByAttempt = cache(async (attemptId: string): Promise<A
  * Get analysis history (last 10 analyses)
  */
 export const getAIAnalysisHistory = cache(async (): Promise<AIAnalysis[]> => {
-  const supabase = await createClient();
+  const viewer = await getViewerContext();
+  if (!viewer) return [];
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('ai_performance_analysis')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', viewer.id)
     .order('created_at', { ascending: false })
     .limit(10);
 
@@ -107,16 +95,16 @@ export const getAIAnalysisHistory = cache(async (): Promise<AIAnalysis[]> => {
  * Get study progress for a specific analysis
  */
 export const getStudyProgress = cache(async (analysisId: string) => {
-  const supabase = await createClient();
+  const viewer = await getViewerContext();
+  if (!viewer) return [];
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('study_progress')
     .select('*')
     .eq('analysis_id', analysisId)
-    .eq('user_id', user.id)
+    .eq('user_id', viewer.id)
     .order('created_at', { ascending: true });
 
   if (error) return [];
@@ -128,15 +116,15 @@ export const getStudyProgress = cache(async (analysisId: string) => {
  * Get user's analysis stats (total analyses, avg score improvement)
  */
 export const getAnalysisStats = cache(async () => {
-  const supabase = await createClient();
+  const viewer = await getViewerContext();
+  if (!viewer) return null;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('ai_performance_analysis')
     .select('overall_score, performance_tier, created_at')
-    .eq('user_id', user.id)
+    .eq('user_id', viewer.id)
     .order('created_at', { ascending: true });
 
   if (error || !data || data.length === 0) return null;
@@ -165,18 +153,21 @@ export const getAnalysisStats = cache(async () => {
 /**
  * Helper to map database record to AIAnalysis type
  */
-function mapAnalysisData(data: any): AIAnalysis {
+type AnalysisRow =
+  Database["public"]["Tables"]["ai_performance_analysis"]["Row"];
+
+function mapAnalysisData(data: AnalysisRow): AIAnalysis {
   return {
     id: data.id,
     attemptId: data.attempt_id,
     overallScore: data.overall_score,
-    performanceTier: data.performance_tier,
-    weakSubjects: data.weak_subjects || [],
-    weakTopics: data.weak_topics || [],
+    performanceTier: data.performance_tier as AIAnalysis["performanceTier"],
+    weakSubjects: (data.weak_subjects ?? []) as AIAnalysis["weakSubjects"],
+    weakTopics: (data.weak_topics ?? []) as AIAnalysis["weakTopics"],
     strengths: data.strengths || [],
     weaknesses: data.weaknesses || [],
-    studyRecommendations: data.study_recommendations || [],
-    practiceRecommendations: data.practice_recommendations || [],
+    studyRecommendations: (data.study_recommendations ?? []) as AIAnalysis["studyRecommendations"],
+    practiceRecommendations: (data.practice_recommendations ?? []) as AIAnalysis["practiceRecommendations"],
     motivationalMessage: data.motivational_message || '',
     createdAt: data.created_at,
     tokensUsed: data.tokens_used || 0

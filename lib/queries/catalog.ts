@@ -37,12 +37,41 @@ export const getEntryTestsCached = unstable_cache(
 export const getSubjectsCached = unstable_cache(
   async (testSlug: string): Promise<SubjectOverview[]> => {
     const supabase = createAnonClient();
-    const { data } = await supabase
+    const subjectsQuery = supabase
       .from("subject_overview")
       .select("*")
       .eq("entry_test_slug", testSlug)
       .order("display_order", { ascending: true });
-    return data ?? [];
+
+    if (testSlug !== "pu") {
+      const { data } = await subjectsQuery;
+      return data ?? [];
+    }
+
+    const [{ data: subjects }, { data: populatedChapters }] = await Promise.all([
+      subjectsQuery,
+      supabase
+        .from("chapter_overview")
+        .select("subject_id")
+        .eq("entry_test_slug", testSlug)
+        .gt("question_count", 0),
+    ]);
+
+    const populatedChapterCounts = new Map<string, number>();
+    for (const chapter of populatedChapters ?? []) {
+      if (!chapter.subject_id) continue;
+      populatedChapterCounts.set(
+        chapter.subject_id,
+        (populatedChapterCounts.get(chapter.subject_id) ?? 0) + 1,
+      );
+    }
+
+    return (subjects ?? []).map((subject) => ({
+      ...subject,
+      chapter_count: subject.subject_id
+        ? (populatedChapterCounts.get(subject.subject_id) ?? 0)
+        : 0,
+    }));
   },
   ["subjects-cached"],
   { 

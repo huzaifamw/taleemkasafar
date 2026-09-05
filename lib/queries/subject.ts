@@ -33,7 +33,13 @@ export async function getSubjectPage(
   const subject = subjects.find((s) => s.subject_slug === subjectSlug);
   if (!subject) return null;
 
-  const chapters = await getChaptersCached(entryTest.slug, subjectSlug);
+  const catalogChapters = await getChaptersCached(entryTest.slug, subjectSlug);
+  // PU's catalog contains placeholder topics that do not have approved MCQs
+  // yet. Keep them out of the student-facing topic list until content exists.
+  const chapters =
+    entryTest.slug === "pu"
+      ? catalogChapters.filter((chapter) => (chapter.question_count ?? 0) > 0)
+      : catalogChapters;
   const totalQuestions = sumQuestionCounts(chapters);
 
   return {

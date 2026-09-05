@@ -1,12 +1,12 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { resolveDisplayName } from "./dashboard-helpers";
 import { getActiveEntryTest, type EntryTest } from "./entry-test";
 import {
   getEntryTestsCached,
   getSubjectsCached,
   type SubjectOverview,
 } from "./catalog";
+import { getViewerContext } from "./profile";
 
 export type { SubjectOverview };
 
@@ -25,14 +25,14 @@ export type DashboardData = {
  * can stream in its own Suspense boundary without duplicate queries.
  */
 export const getHasActivity = cache(async (): Promise<boolean> => {
+  const viewer = await getViewerContext();
+  if (!viewer) return false;
+
   const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  const userId = claims?.claims?.sub as string | undefined;
-  if (!userId) return false;
   const { count } = await supabase
     .from("attempts")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
+    .eq("user_id", viewer.id);
   return (count ?? 0) > 0;
 });
 
@@ -42,19 +42,11 @@ export const getHasActivity = cache(async (): Promise<boolean> => {
  * - Catalog data (tests list, subjects + counts) → cached anon client.
  */
 export async function getDashboardData(): Promise<DashboardData | null> {
+  const viewer = await getViewerContext();
+  if (!viewer) return null;
+
   const supabase = await createClient();
-
-  const { data: claims } = await supabase.auth.getClaims();
-  const userId = claims?.claims?.sub as string | undefined;
-  const email = (claims?.claims?.email as string | undefined) ?? null;
-  if (!userId) return null;
-
-  const [{ data: profile }, entryTest, tests] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", userId)
-      .maybeSingle(),
+  const [entryTest, tests] = await Promise.all([
     getActiveEntryTest(),
     getEntryTestsCached(),
   ]);
@@ -66,12 +58,12 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     supabase
       .from("attempts")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", userId),
+      .eq("user_id", viewer.id),
   ]);
 
   return {
-    displayName: resolveDisplayName(profile?.display_name, email),
-    email,
+    displayName: viewer.displayName,
+    email: viewer.email,
     entryTest,
     tests,
     subjects,

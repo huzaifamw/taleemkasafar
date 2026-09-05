@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveEntryTest } from "./entry-test";
+import { getViewerContext } from "./profile";
 import { resumeIndex } from "@/lib/quiz/session";
 import type { Database } from "@/lib/database.types";
 
@@ -149,14 +150,13 @@ export async function getPracticeScreen(
   }
 
   // Load the user's existing answers for this chapter+usage attempt (resume).
-  const { data: claims } = await supabase.auth.getClaims();
-  const userId = claims?.claims?.sub as string | undefined;
+  const viewer = await getViewerContext();
   const savedByQuestion = new Map<string, string | null>();
-  if (userId) {
+  if (viewer) {
     const { data: attempt } = await supabase
       .from("attempts")
       .select("id")
-      .eq("user_id", userId)
+      .eq("user_id", viewer.id)
       .eq("entry_test_id", entryTest.id)
       .eq("mode", "practice")
       .eq("topic_id", chapter.id)
