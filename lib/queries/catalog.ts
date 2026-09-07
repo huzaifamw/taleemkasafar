@@ -26,7 +26,7 @@ export const getEntryTestsCached = unstable_cache(
       (t): t is EntryTest => !!t.id && !!t.slug && !!t.name,
     );
   },
-  ["entry-tests-cached-v2"],
+  ["entry-tests-cached-v3"],
   { tags: [CATALOG_TAG] }
 );
 

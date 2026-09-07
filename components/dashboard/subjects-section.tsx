@@ -9,6 +9,9 @@ const SUBJECT_META: Record<string, { icon: string; tagline: string }> = {
   english: { icon: "menu_book", tagline: "Grammar, vocabulary & comprehension" },
   maths: { icon: "calculate", tagline: "Algebra, calculus & more" },
   mathematics: { icon: "calculate", tagline: "Algebra, calculus & problem solving" },
+  "advanced-mathematics": { icon: "functions", tagline: "Calculus, algebra & analytical geometry" },
+  "basic-mathematics": { icon: "calculate", tagline: "Arithmetic & quantitative problem solving" },
+  "iq-analytical-reasoning": { icon: "neurology", tagline: "Logic, patterns & analytical reasoning" },
   physics: { icon: "bolt", tagline: "Mechanics, waves & modern physics" },
   chemistry: { icon: "science", tagline: "Physical, organic & inorganic chemistry" },
 };

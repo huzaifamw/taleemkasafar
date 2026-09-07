@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/dashboard/icon";
-import { AdminButton } from "./admin-button";
 import { toggleEntryTestActive, deleteEntryTest } from "@/app/admin/entry-tests/actions";
 import type { AdminEntryTest } from "@/lib/queries/admin-entry-tests";
 

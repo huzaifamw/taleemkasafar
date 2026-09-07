@@ -591,8 +591,10 @@ export type Database = {
           past_paper_min: number
           practice_max: number | null
           question_count: number
+          section_duration_seconds: number | null
           test_subject_id: string
           updated_at: string
+          weight_percent: number | null
         }
         Insert: {
           blueprint_id: string
@@ -603,8 +605,10 @@ export type Database = {
           past_paper_min?: number
           practice_max?: number | null
           question_count: number
+          section_duration_seconds?: number | null
           test_subject_id: string
           updated_at?: string
+          weight_percent?: number | null
         }
         Update: {
           blueprint_id?: string
@@ -615,8 +619,10 @@ export type Database = {
           past_paper_min?: number
           practice_max?: number | null
           question_count?: number
+          section_duration_seconds?: number | null
           test_subject_id?: string
           updated_at?: string
+          weight_percent?: number | null
         }
         Relationships: [
           {
@@ -699,6 +705,7 @@ export type Database = {
           marks_per_incorrect: number
           marks_per_unanswered: number
           name: string
+          scoring_mode: string
           total_questions: number
           updated_at: string
         }
@@ -715,6 +722,7 @@ export type Database = {
           marks_per_incorrect?: number
           marks_per_unanswered?: number
           name: string
+          scoring_mode?: string
           total_questions: number
           updated_at?: string
         }
@@ -731,6 +739,7 @@ export type Database = {
           marks_per_incorrect?: number
           marks_per_unanswered?: number
           name?: string
+          scoring_mode?: string
           total_questions?: number
           updated_at?: string
         }

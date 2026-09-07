@@ -57,40 +57,36 @@ export async function getAllEntryTests(): Promise<AdminEntryTest[]> {
     return [];
   }
 
-  // Get counts for each entry test
-  const entryTestIds = entryTests.map((et) => et.id);
+  // Ask Postgres for exact counts instead of downloading rows and counting in
+  // JavaScript. Supabase caps ordinary row responses (commonly at 1,000),
+  // which made later tests display partial question totals.
+  return Promise.all(
+    entryTests.map(async (entryTest) => {
+      const [subjectsResult, questionsResult, blueprintsResult] =
+        await Promise.all([
+          supabase
+            .from("test_subjects")
+            .select("id", { count: "exact", head: true })
+            .eq("entry_test_id", entryTest.id)
+            .is("deleted_at", null),
+          supabase
+            .from("question_tests")
+            .select("id", { count: "exact", head: true })
+            .eq("entry_test_id", entryTest.id),
+          supabase
+            .from("mock_test_blueprints")
+            .select("id", { count: "exact", head: true })
+            .eq("entry_test_id", entryTest.id),
+        ]);
 
-  // Get test subjects counts
-  const { data: testSubjects } = await supabase
-    .from("test_subjects")
-    .select("entry_test_id, id")
-    .in("entry_test_id", entryTestIds)
-    .is("deleted_at", null);
-
-  // Get questions counts via question_tests
-  const { data: questionTests } = await supabase
-    .from("question_tests")
-    .select("entry_test_id, id")
-    .in("entry_test_id", entryTestIds);
-
-  // Get blueprints counts
-  const { data: blueprints } = await supabase
-    .from("mock_test_blueprints")
-    .select("entry_test_id, id")
-    .in("entry_test_id", entryTestIds);
-
-  // Map counts to entry tests
-  const results: AdminEntryTest[] = entryTests.map((et) => ({
-    ...et,
-    subjects_count: testSubjects?.filter((ts) => ts.entry_test_id === et.id)
-      .length || 0,
-    questions_count: questionTests?.filter((qt) => qt.entry_test_id === et.id)
-      .length || 0,
-    blueprints_count: blueprints?.filter((b) => b.entry_test_id === et.id)
-      .length || 0,
-  }));
-
-  return results;
+      return {
+        ...entryTest,
+        subjects_count: subjectsResult.count ?? 0,
+        questions_count: questionsResult.count ?? 0,
+        blueprints_count: blueprintsResult.count ?? 0,
+      };
+    }),
+  );
 }
 
 /**
@@ -164,7 +160,7 @@ export async function getEntryTestById(
     subjects_count: testSubjects?.length || 0,
     questions_count: questionsCount || 0,
     blueprints_count: mockBlueprints?.length || 0,
-    test_subjects: testSubjects?.map((ts: any) => ({
+    test_subjects: testSubjects?.map((ts) => ({
       ...ts,
       subject_name: ts.subjects?.name,
     })) || [],
@@ -214,7 +210,7 @@ export async function getTestSubjectsByEntryTest(entryTestId: string) {
     return [];
   }
 
-  return data?.map((ts: any) => ({
+  return data?.map((ts) => ({
     ...ts,
     subject_name: ts.subjects?.name,
     subject_slug: ts.subjects?.slug,

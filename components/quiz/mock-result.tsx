@@ -21,7 +21,9 @@ export function MockResult({ result }: { result: MockResultDetail }) {
           </span>
         </div>
         <div className="mt-3 font-headline text-lg font-bold text-brand-fixed">
-          {result.earnedMarks} / {result.maximumMarks} marks
+          {result.scoringMode === "section_weighted"
+            ? `${result.earnedMarks} / 100 weighted points`
+            : `${result.earnedMarks} / ${result.maximumMarks} marks`}
         </div>
         <div className="mt-6 flex flex-wrap gap-6 font-headline">
           <Stat label="Correct" value={result.correctCount} tone="text-[#4ade80]" />

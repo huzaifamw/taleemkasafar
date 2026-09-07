@@ -105,9 +105,16 @@ export function MockBlueprintsList({
                   <p className="font-semibold text-gray-900">{blueprint.total_questions}</p>
                 </div>
                 <div>
-                  <p className="text-gray-600">Total Marks</p>
+                  <p className="text-gray-600">
+                    {blueprint.scoring_mode === "section_weighted"
+                      ? "Scoring"
+                      : "Total Marks"}
+                  </p>
                   <p className="font-semibold text-gray-900">
-                    {blueprint.total_questions * Number(blueprint.marks_per_correct)}
+                    {blueprint.scoring_mode === "section_weighted"
+                      ? "Section weighted"
+                      : blueprint.total_questions *
+                        Number(blueprint.marks_per_correct)}
                   </p>
                 </div>
               </div>

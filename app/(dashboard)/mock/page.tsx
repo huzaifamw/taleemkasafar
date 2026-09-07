@@ -51,6 +51,29 @@ async function MockLandingView() {
               <p className="mb-6 max-w-xl font-body text-base text-white/80">
                 {data.blueprint.description}
               </p>
+              {data.blueprint.sections.length > 0 && (
+                <div className="mb-8 grid gap-2 sm:grid-cols-2">
+                  {data.blueprint.sections.map((section) => (
+                    <div
+                      key={section.name}
+                      className="border border-white/25 bg-white/5 px-4 py-3"
+                    >
+                      <div className="font-headline text-sm font-bold uppercase tracking-tight">
+                        {section.name}
+                      </div>
+                      <div className="mt-1 text-xs text-white/65">
+                        {section.questionCount} questions
+                        {section.weightPercent !== null
+                          ? ` · ${section.weightPercent}% weight`
+                          : ""}
+                        {section.durationSeconds !== null
+                          ? ` · ${Math.round(section.durationSeconds / 60)} min`
+                          : ""}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="mb-8 flex flex-wrap gap-6 font-headline">
                 <div>
                   <div className="text-3xl font-bold">
@@ -70,18 +93,25 @@ async function MockLandingView() {
                 </div>
                 <div>
                   <div className="text-3xl font-bold tabular-nums">
-                    {data.blueprint.maximumMarks}
+                    {data.blueprint.scoringMode === "section_weighted"
+                      ? "Weighted"
+                      : data.blueprint.maximumMarks}
                   </div>
                   <div className="text-xs uppercase tracking-widest text-white/60">
-                    Total Marks
+                    {data.blueprint.scoringMode === "section_weighted"
+                      ? "Scoring"
+                      : "Total Marks"}
                   </div>
                 </div>
               </div>
               <p className="mb-6 text-xs font-bold uppercase tracking-widest text-white/60">
-                +{data.blueprint.marksPerCorrect} correct
-                {data.blueprint.marksPerIncorrect < 0
-                  ? ` · ${data.blueprint.marksPerIncorrect} incorrect`
-                  : " · No negative marking"}
+                {data.blueprint.scoringMode === "section_weighted"
+                  ? "Section weights: 50% · 20% · 20% · 10% · No negative marking"
+                  : `+${data.blueprint.marksPerCorrect} correct${
+                      data.blueprint.marksPerIncorrect < 0
+                        ? ` · ${data.blueprint.marksPerIncorrect} incorrect`
+                        : " · No negative marking"
+                    }`}
               </p>
               <StartMockButton blueprintId={data.blueprint.id} />
             </section>

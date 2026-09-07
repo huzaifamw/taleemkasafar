@@ -14,6 +14,13 @@ export type MockBlueprintSummary = {
   marksPerIncorrect: number;
   marksPerUnanswered: number;
   maximumMarks: number;
+  scoringMode: "uniform" | "section_weighted";
+  sections: {
+    name: string;
+    questionCount: number;
+    weightPercent: number | null;
+    durationSeconds: number | null;
+  }[];
 };
 
 export type MockResultSummary = {
@@ -40,7 +47,7 @@ export async function getMockLanding(): Promise<MockLandingData | null> {
   const { data: bp } = await supabase
     .from("mock_test_blueprints")
     .select(
-      "id, name, description, duration_seconds, total_questions, marks_per_correct, marks_per_incorrect, marks_per_unanswered",
+      "id, name, description, duration_seconds, total_questions, marks_per_correct, marks_per_incorrect, marks_per_unanswered, scoring_mode, mock_blueprint_slots(question_count, weight_percent, section_duration_seconds, display_order, test_subjects(subjects(name)))",
     )
     .eq("entry_test_id", entryTest.id)
     .eq("is_active", true)
@@ -59,6 +66,24 @@ export async function getMockLanding(): Promise<MockLandingData | null> {
         marksPerIncorrect: Number(bp.marks_per_incorrect),
         marksPerUnanswered: Number(bp.marks_per_unanswered),
         maximumMarks: bp.total_questions * Number(bp.marks_per_correct),
+        scoringMode: bp.scoring_mode as "uniform" | "section_weighted",
+        sections: (
+          bp.mock_blueprint_slots as unknown as {
+            question_count: number;
+            weight_percent: number | null;
+            section_duration_seconds: number | null;
+            display_order: number;
+            test_subjects: { subjects: { name: string } | null } | null;
+          }[]
+        )
+          .sort((a, b) => a.display_order - b.display_order)
+          .map((slot) => ({
+            name: slot.test_subjects?.subjects?.name ?? "Section",
+            questionCount: slot.question_count,
+            weightPercent:
+              slot.weight_percent === null ? null : Number(slot.weight_percent),
+            durationSeconds: slot.section_duration_seconds,
+          })),
       }
     : null;
 
@@ -216,6 +241,7 @@ export type MockResultDetail = {
   scorePercent: number;
   earnedMarks: number;
   maximumMarks: number;
+  scoringMode: "uniform" | "section_weighted";
   perSubject: Record<string, { correct: number; total: number }>;
   submittedAt: string | null;
 };
@@ -232,7 +258,7 @@ export async function getMockResult(
   const { data } = await supabase
     .from("mock_results")
     .select(
-      "attempt_id, total_questions, attempted_count, correct_count, incorrect_count, skipped_count, score_percent, per_subject, attempts!inner(submitted_at, user_id, mock_test_blueprints(marks_per_correct, marks_per_incorrect, marks_per_unanswered))",
+      "attempt_id, total_questions, attempted_count, correct_count, incorrect_count, skipped_count, score_percent, per_subject, attempts!inner(submitted_at, user_id, mock_test_blueprints(marks_per_correct, marks_per_incorrect, marks_per_unanswered, scoring_mode))",
     )
     .eq("attempt_id", attemptId)
     .eq("attempts.user_id", viewer.id)
@@ -245,12 +271,14 @@ export async function getMockResult(
       marks_per_correct: number;
       marks_per_incorrect: number;
       marks_per_unanswered: number;
+      scoring_mode: "uniform" | "section_weighted";
     } | null;
   } | null;
   const scoring = attempt?.mock_test_blueprints;
   const marksPerCorrect = Number(scoring?.marks_per_correct ?? 1);
   const marksPerIncorrect = Number(scoring?.marks_per_incorrect ?? 0);
   const marksPerUnanswered = Number(scoring?.marks_per_unanswered ?? 0);
+  const scoringMode = scoring?.scoring_mode ?? "uniform";
 
   return {
     attemptId: data.attempt_id,
@@ -261,10 +289,16 @@ export async function getMockResult(
     skippedCount: data.skipped_count,
     scorePercent: Number(data.score_percent),
     earnedMarks:
-      data.correct_count * marksPerCorrect +
-      data.incorrect_count * marksPerIncorrect +
-      data.skipped_count * marksPerUnanswered,
-    maximumMarks: data.total_questions * marksPerCorrect,
+      scoringMode === "section_weighted"
+        ? Number(data.score_percent)
+        : data.correct_count * marksPerCorrect +
+          data.incorrect_count * marksPerIncorrect +
+          data.skipped_count * marksPerUnanswered,
+    maximumMarks:
+      scoringMode === "section_weighted"
+        ? 100
+        : data.total_questions * marksPerCorrect,
+    scoringMode,
     perSubject:
       (data.per_subject as Record<
         string,
