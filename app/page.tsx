@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FeedbackForm } from "@/components/landing/feedback-form";
-import { CountUpStats, FAQ, LiveActivity, LogoMarquee, ProductDemo } from "@/components/landing/live-components";
+import { AdaptiveStudyMap, CountUpStats, FAQ, LandingNavbar, LiveActivity, LogoMarquee, ProductDemo } from "@/components/landing/live-components";
 import { getPublishedBlogs } from "@/lib/queries/blogs";
 
 const features = [
@@ -13,23 +13,7 @@ export default async function LandingPage() {
   const posts = (await getPublishedBlogs()).slice(0, 3);
   return (
     <main className="min-h-screen overflow-hidden bg-surface font-body text-on-surface">
-      <header className="sticky top-0 z-50 border-b-2 border-black bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 md:px-8">
-          <Link href="/" className="leading-none">
-            <span className="block font-headline text-xl font-bold tracking-tighter">Taleem ka Safar</span>
-            <span className="mt-1 block text-[9px] font-bold uppercase tracking-[0.24em] opacity-50">Learn. Practice. Progress.</span>
-          </Link>
-          <nav className="hidden items-center gap-8 font-headline text-sm font-bold uppercase md:flex">
-            <a href="#features" className="hover:text-brand">How it works</a>
-            <a href="#stories" className="hover:text-brand">Stories</a>
-            <Link href="/blogs" className="hover:text-brand">Study tips</Link>
-          </nav>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/auth/login" className="px-3 py-3 font-headline text-xs font-bold uppercase hover:text-brand sm:px-4 sm:text-sm">Sign in</Link>
-            <Link href="/auth/sign-up" className="border-2 border-black bg-brand px-4 py-3 font-headline text-xs font-bold uppercase text-white shadow-hard-sm transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none sm:px-5 sm:text-sm">Start free</Link>
-          </div>
-        </div>
-      </header>
+      <LandingNavbar />
 
       <section className="landing-grid relative border-b-2 border-black bg-white">
         <div className="pointer-events-none absolute left-[38%] top-20 h-72 w-72 rounded-full bg-brand-fixed blur-3xl opacity-80" />
@@ -68,6 +52,8 @@ export default async function LandingPage() {
           {features.map((feature) => <article key={feature.number} className="group border-2 border-black bg-white p-6 shadow-hard transition-transform hover:-translate-y-1"><div className="flex items-start justify-between"><span className="material-symbols-outlined text-5xl text-brand">{feature.icon}</span><span className="font-headline text-sm font-bold opacity-30">/{feature.number}</span></div><h3 className="mt-12 font-headline text-2xl font-bold uppercase">{feature.title}</h3><p className="mt-3 leading-relaxed text-on-surface-variant">{feature.text}</p></article>)}
         </div>
       </section>
+
+      <AdaptiveStudyMap />
 
       <section className="border-y-2 border-black bg-black text-white">
         <div className="mx-auto grid max-w-7xl lg:grid-cols-2">

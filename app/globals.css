@@ -105,13 +105,40 @@ html.ms-loaded .material-symbols-outlined {
   50% { transform: translateY(-10px) rotate(1deg); }
 }
 
+@keyframes landing-scan {
+  0% { transform: translateY(0); opacity: 0; }
+  12% { opacity: .65; }
+  88% { opacity: .3; }
+  100% { transform: translateY(620px); opacity: 0; }
+}
+
+@keyframes landing-chart-draw {
+  from { stroke-dashoffset: 260; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes landing-progress-in {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 .landing-marquee { animation: landing-marquee 28s linear infinite; }
 .landing-float { animation: landing-float 5s ease-in-out infinite; }
+.landing-scan { animation: landing-scan 5.5s ease-in-out infinite; }
+.landing-chart-line {
+  stroke-dasharray: 260;
+  stroke-dashoffset: 260;
+  animation: landing-chart-draw .9s ease-out forwards;
+}
+.landing-progress {
+  transform-origin: left;
+  animation: landing-progress-in .7s ease-out both;
+}
 .landing-grid {
   background-image: linear-gradient(rgba(0,0,0,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.055) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-marquee, .landing-float { animation: none; }
+  .landing-marquee, .landing-float, .landing-scan, .landing-chart-line, .landing-progress { animation: none; }
 }
