@@ -12,6 +12,7 @@ type ContentButton = {
   icon: string;
   /** href when enabled; undefined => "coming soon" (disabled) */
   href?: string;
+  disabledLabel?: string;
 };
 
 /**
@@ -46,19 +47,23 @@ export function ChapterList({
         const id = c.chapter_id ?? String(i);
         const open = openId === id;
         const count = c.question_count ?? 0;
+        const pastPaperCount = c.past_paper_count ?? 0;
+        const practiceCount = c.practice_count ?? 0;
         const base = `/subjects/${subjectSlug}/${c.chapter_slug}`;
         const buttons: ContentButton[] = [
           {
             key: "past_paper",
             label: "Past Paper MCQs",
             icon: "history_edu",
-            href: count > 0 ? `${base}/past-paper` : undefined,
+            href: pastPaperCount > 0 ? `${base}/past-paper` : undefined,
+            disabledLabel: "No questions available",
           },
           {
             key: "practice",
             label: "Practice MCQs",
             icon: "assignment",
-            href: count > 0 ? `${base}/practice` : undefined,
+            href: practiceCount > 0 ? `${base}/practice` : undefined,
+            disabledLabel: "No questions available",
           },
           { key: "notes", label: "Quick Notes", icon: "sticky_note_2" },
           { key: "lectures", label: "Lectures", icon: "play_circle" },
@@ -128,7 +133,8 @@ export function ChapterList({
                   ) : (
                     <div
                       key={b.key}
-                      title="Coming soon"
+                      title={b.disabledLabel ?? "Coming soon"}
+                      aria-disabled="true"
                       className="flex cursor-not-allowed flex-col gap-3 border-2 border-black p-4 text-left opacity-40"
                     >
                       <Icon name={b.icon} className="text-brand" />
@@ -136,7 +142,7 @@ export function ChapterList({
                         {b.label}
                       </span>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                        Coming soon
+                        {b.disabledLabel ?? "Coming soon"}
                       </span>
                     </div>
                   ),

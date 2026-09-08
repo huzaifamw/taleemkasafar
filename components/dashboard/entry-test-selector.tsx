@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useOptimistic, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { selectEntryTest } from "@/app/(dashboard)/actions";
 import { Icon } from "./icon";
@@ -18,18 +18,26 @@ export function EntryTestSelector({
   activeId: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [optimisticActiveId, setOptimisticActiveId] = useOptimistic(activeId);
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const active = tests.find((t) => t.id === activeId) ?? tests[0];
+  const active = tests.find((t) => t.id === optimisticActiveId) ?? tests[0];
   if (!active) return null;
 
   const choose = (id: string) => {
     setOpen(false);
-    if (id === activeId) return;
+    setError(null);
+    if (id === optimisticActiveId) return;
     startTransition(async () => {
-      await selectEntryTest(id);
+      setOptimisticActiveId(id);
+      const result = await selectEntryTest(id);
+      if (!result.success) {
+        setError(result.error ?? "Unable to switch entry test.");
+        return;
+      }
       router.refresh();
     });
   };
@@ -49,6 +57,15 @@ export function EntryTestSelector({
         <Icon name={open ? "expand_less" : "expand_more"} className="text-lg" />
       </button>
 
+      {error && (
+        <p
+          role="alert"
+          className="absolute left-1/2 top-full z-30 mt-2 w-64 -translate-x-1/2 border-2 border-danger bg-red-50 px-3 py-2 text-xs font-bold text-danger shadow-hard-sm"
+        >
+          {error}
+        </p>
+      )}
+
       {open && (
         <>
           {/* click-away backdrop */}
@@ -62,7 +79,7 @@ export function EntryTestSelector({
             className="absolute left-1/2 z-20 mt-2 w-64 -translate-x-1/2 border-2 border-black bg-white shadow-hard"
           >
             {tests.map((t) => {
-              const selected = t.id === activeId;
+              const selected = t.id === optimisticActiveId;
               return (
                 <li key={t.id} role="option" aria-selected={selected}>
                   <button

@@ -78,9 +78,9 @@ export async function getPracticeScreen(
   const topicIds = (descendants ?? []).map((t) => t.id);
   if (topicIds.length === 0) topicIds.push(chapter.id);
 
-  // Questions for this chapter that belong to the active test, filtered to the
-  // requested usage when such rows exist (falls back to all chapter questions
-  // for the test so the practice surface isn't empty before practice tagging).
+  // Questions for this chapter that belong to the active test and requested
+  // usage. Do not fall back to the other mode: an empty practice or past-paper
+  // pool must remain empty so its route and button can be protected correctly.
   const { data: usageRows } = await supabase
     .from("question_tests")
     .select("question_id, questions!inner(topic_id, deleted_at, moderation_status)")
@@ -89,8 +89,6 @@ export async function getPracticeScreen(
     .in("questions.topic_id", topicIds)
     .is("questions.deleted_at", null)
     .eq("questions.moderation_status", "approved");
-
-  const hasUsagePool = (usageRows?.length ?? 0) > 0;
 
   // Base query for the question content.
   let qQuery = supabase
@@ -101,20 +99,26 @@ export async function getPracticeScreen(
     .eq("moderation_status", "approved")
     .order("external_id", { ascending: true });
 
-  if (hasUsagePool) {
-    const ids = (usageRows ?? []).map((r) => r.question_id);
-    qQuery = qQuery.in("id", ids);
-  } else {
-    // Fall back to all chapter questions used by this test.
-    const { data: testRows } = await supabase
-      .from("question_tests")
-      .select("question_id")
-      .eq("entry_test_id", entryTest.id);
-    const testQ = new Set((testRows ?? []).map((r) => r.question_id));
-    // Filter happens client-side below if needed; but prefer DB filter:
-    const ids = [...testQ];
-    if (ids.length > 0) qQuery = qQuery.in("id", ids);
+  const usageQuestionIds = (usageRows ?? []).map((row) => row.question_id);
+
+  // Avoid issuing an invalid/empty IN query while still returning enough
+  // chapter metadata for the route to render its not-found guard.
+  if (usageQuestionIds.length === 0) {
+    return {
+      entryTestSlug: entryTest.slug,
+      entryTestName: entryTest.name,
+      subjectSlug: subject.slug,
+      subjectName: subject.name,
+      chapterSlug: chapter.slug,
+      chapterTitle: chapter.title,
+      usage,
+      topicId: chapter.id,
+      questions: [],
+      resumeIndex: 0,
+    };
   }
+
+  qQuery = qQuery.in("id", usageQuestionIds);
 
   const { data: questionRows } = await qQuery;
   const questions = questionRows ?? [];

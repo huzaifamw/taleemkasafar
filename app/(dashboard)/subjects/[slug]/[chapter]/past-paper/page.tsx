@@ -31,6 +31,7 @@ async function PastPaperView({
 
   if (!entryTest) redirect("/auth/login");
   if (!data) notFound();
+  if (data.questions.length === 0) notFound();
 
   return <PracticeRunner data={data} />;
 }

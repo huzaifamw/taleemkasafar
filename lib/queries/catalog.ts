@@ -86,14 +86,16 @@ export const getChaptersCached = unstable_cache(
     const supabase = createAnonClient();
     const { data } = await supabase
       .from("chapter_overview")
-      .select("*")
+      .select(
+        "entry_test_id, entry_test_slug, subject_id, subject_slug, chapter_id, chapter_external_id, chapter_slug, chapter_title, chapter_kind, display_order, subtopic_count, question_count, practice_count, past_paper_count",
+      )
       .eq("entry_test_slug", testSlug)
       .eq("subject_slug", subjectSlug)
       .gt("question_count", 0)
       .order("display_order", { ascending: true });
     return data ?? [];
   },
-  ["chapters-cached-v2"],
+  ["chapters-cached-v5"],
   { 
     tags: [CATALOG_TAG],
     revalidate: 3600 // 1 hour

@@ -1237,6 +1237,8 @@ export type Database = {
           display_order: number | null
           entry_test_id: string | null
           entry_test_slug: string | null
+          past_paper_count: number | null
+          practice_count: number | null
           question_count: number | null
           subject_id: string | null
           subject_slug: string | null
@@ -1355,6 +1357,10 @@ export type Database = {
       }
       get_user_by_id_admin: { Args: { p_user_id: string }; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
+      select_entry_test: {
+        Args: { p_entry_test_id: string }
+        Returns: boolean
+      }
       start_attempt: {
         Args: {
           p_entry_test: string

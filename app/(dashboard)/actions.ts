@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { CATALOG_TAG } from "@/lib/queries/catalog";
 
@@ -8,29 +8,24 @@ import { CATALOG_TAG } from "@/lib/queries/catalog";
  * Server Action: set the signed-in user's selected entry test.
  * Business logic on the server; the header selector calls this.
  */
-export async function selectEntryTest(entryTestId: string): Promise<void> {
+export async function selectEntryTest(
+  entryTestId: string,
+): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
-  const { data: claims } = await supabase.auth.getClaims();
-  const userId = claims?.claims?.sub as string | undefined;
-  if (!userId) return;
+  const { data: updated, error } = await supabase.rpc("select_entry_test", {
+    p_entry_test_id: entryTestId,
+  });
 
-  // Validate the test exists and is active before saving.
-  const { data: test } = await supabase
-    .from("entry_tests")
-    .select("id")
-    .eq("id", entryTestId)
-    .eq("is_active", true)
-    .maybeSingle();
-  if (!test) return;
+  if (error || !updated) {
+    return {
+      success: false,
+      error: "Unable to switch entry test. Please try again.",
+    };
+  }
 
-  await supabase
-    .from("profiles")
-    .update({ selected_test_id: entryTestId })
-    .eq("id", userId);
-
-  // The selected test changed → re-render pages (catalog stays cached and is
-  // shared across tests, so we only need to refresh the dynamic shell).
-  revalidatePath("/", "layout");
+  // Catalog data is shared and remains cached. The client refreshes only the
+  // currently visible route after this action succeeds.
+  return { success: true };
 }
 
 /**
