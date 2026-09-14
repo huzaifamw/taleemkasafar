@@ -84,9 +84,12 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/login");
 
   if (!user && !isPublicRoute) {
-    // No user → send to login. The landing page and auth routes stay public.
+    // Keep admin and student authentication entry points separate. This guard
+    // runs before the route layout, so admin requests must be routed here
+    // rather than relying only on app/admin/layout.tsx.
+    const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    url.pathname = isAdminRoute ? "/admin-auth/login" : "/auth/login";
     return NextResponse.redirect(url);
   }
 

@@ -216,6 +216,7 @@ export async function getMockAttempt(
       statement: meta?.statement ?? "",
       options: optionsByQuestion.get(r.question_id) ?? [],
       savedOptionId: r.selected_option_id,
+      bookmarked: false,
     });
     sectionLabels.push(meta?.subject ?? "");
     reviewFlags.push(r.marked_for_review);

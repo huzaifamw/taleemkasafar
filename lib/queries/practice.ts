@@ -19,6 +19,8 @@ export type QuizQuestion = {
   options: QuizOption[];
   /** Present only for already-answered questions (for resume display). */
   savedOptionId: string | null;
+  /** Whether the signed-in student has saved this question for revision. */
+  bookmarked: boolean;
 };
 
 export type PracticeScreenData = {
@@ -50,7 +52,9 @@ export async function getPracticeScreen(
 
   const supabase = await createClient();
 
-  // Resolve subject + the chapter (top-level topic) by slug.
+  // Resolve the subject first. Subjects are shared across entry tests, so a
+  // chapter cannot then be resolved by subject_id + slug alone: common slugs
+  // such as "synonyms" and "tenses" may exist for several tests.
   const { data: subject } = await supabase
     .from("subjects")
     .select("id, slug, name")
@@ -58,15 +62,36 @@ export async function getPracticeScreen(
     .maybeSingle();
   if (!subject) return null;
 
-  const { data: chapter } = await supabase
-    .from("topics")
-    .select("id, slug, title")
+  // chapter_overview scopes each topic to the selected entry test through its
+  // question_tests relationships. Requiring a populated chapter excludes
+  // same-slug topic rows that belong only to another test.
+  const { data: chapterScope, error: chapterError } = await supabase
+    .from("chapter_overview")
+    .select("chapter_id, chapter_slug, chapter_title")
+    .eq("entry_test_id", entryTest.id)
     .eq("subject_id", subject.id)
-    .eq("slug", chapterSlug)
-    .is("parent_topic_id", null)
-    .is("deleted_at", null)
+    .eq("chapter_slug", chapterSlug)
+    .gt("question_count", 0)
+    .order("display_order", { ascending: true })
+    .limit(1)
     .maybeSingle();
-  if (!chapter) return null;
+  if (
+    chapterError ||
+    !chapterScope?.chapter_id ||
+    !chapterScope.chapter_slug ||
+    !chapterScope.chapter_title
+  ) {
+    if (chapterError) {
+      console.error("Failed to resolve test-scoped chapter:", chapterError.message);
+    }
+    return null;
+  }
+
+  const chapter = {
+    id: chapterScope.chapter_id,
+    slug: chapterScope.chapter_slug,
+    title: chapterScope.chapter_title,
+  };
 
   // All descendant topic ids (chapter node + its children) for question scope.
   const { data: descendants } = await supabase
@@ -156,19 +181,28 @@ export async function getPracticeScreen(
   // Load the user's existing answers for this chapter+usage attempt (resume).
   const viewer = await getViewerContext();
   const savedByQuestion = new Map<string, string | null>();
+  const bookmarkedIds = new Set<string>();
   if (viewer) {
-    const { data: attempt } = await supabase
-      .from("attempts")
-      .select("id")
-      .eq("user_id", viewer.id)
-      .eq("entry_test_id", entryTest.id)
-      .eq("mode", "practice")
-      .eq("topic_id", chapter.id)
-      .eq("usage", usage)
-      .eq("status", "in_progress")
-      .order("started_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const [{ data: attempt }, { data: bookmarks }] = await Promise.all([
+      supabase
+        .from("attempts")
+        .select("id")
+        .eq("user_id", viewer.id)
+        .eq("entry_test_id", entryTest.id)
+        .eq("mode", "practice")
+        .eq("topic_id", chapter.id)
+        .eq("usage", usage)
+        .eq("status", "in_progress")
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("bookmarks")
+        .select("question_id")
+        .eq("user_id", viewer.id)
+        .in("question_id", questionIds),
+    ]);
+    for (const bookmark of bookmarks ?? []) bookmarkedIds.add(bookmark.question_id);
     if (attempt) {
       const { data: answers } = await supabase
         .from("attempt_answers")
@@ -185,6 +219,7 @@ export async function getPracticeScreen(
     statement: q.statement,
     options: optionsByQuestion.get(q.id) ?? [],
     savedOptionId: savedByQuestion.get(q.id) ?? null,
+    bookmarked: bookmarkedIds.has(q.id),
   }));
 
   const savedFlags = quizQuestions.map((q) => q.savedOptionId !== null);

@@ -21,7 +21,7 @@ export function BookmarkButton({
     setSaved(next); // optimistic
     startTransition(async () => {
       const result = await toggleBookmark(questionId);
-      setSaved(result);
+      setSaved(result.error ? saved : result.saved);
     });
   }
 

@@ -34,3 +34,17 @@ options: optionsData?.map(opt => ({
   label: opt.option_label 
 }))
 ```
+
+## Student Bookmark Use Case
+
+- `bookmarks` stores one saved question per student through the unique
+  `(user_id, question_id)` relationship.
+- Row-level security restricts bookmark reads and writes to the owning student.
+- Bookmarks are available from subject practice and past-paper sessions, not
+  mock-test sessions.
+- `/subjects/bookmarks` shows only bookmarked questions associated with the
+  student's currently selected entry test through `question_tests`.
+- Correct answers and explanations are loaded only on the authenticated saved
+  questions revision page. Regular practice question queries remain answer-free.
+- No additional bookmark table or explanation field is required; explanations
+  come from `questions.explanation`.

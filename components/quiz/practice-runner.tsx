@@ -163,7 +163,11 @@ export function PracticeRunner({ data }: { data: PracticeScreenData }) {
               <span className="font-headline text-xs font-bold uppercase tracking-widest text-brand">
                 {data.subjectName} · Q{index + 1}
               </span>
-              <BookmarkButton questionId={current.id} />
+              <BookmarkButton
+                key={current.id}
+                questionId={current.id}
+                initiallySaved={current.bookmarked}
+              />
             </div>
             <div className="flex-1 border-2 border-black bg-white p-6 shadow-hard">
               <p className="font-body text-xl leading-relaxed text-on-surface">

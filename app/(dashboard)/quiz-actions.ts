@@ -75,27 +75,31 @@ export async function finishPractice(attemptId: string): Promise<void> {
 }
 
 /** Toggle a bookmark on a question for the signed-in user. */
-export async function toggleBookmark(questionId: string): Promise<boolean> {
+export async function toggleBookmark(
+  questionId: string,
+): Promise<{ saved: boolean; error?: string }> {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   const userId = claims?.claims?.sub as string | undefined;
-  if (!userId) return false;
+  if (!userId) return { saved: false, error: "Not authenticated" };
 
-  const { data: existing } = await supabase
+  const { data: existing, error: lookupError } = await supabase
     .from("bookmarks")
     .select("id")
     .eq("user_id", userId)
     .eq("question_id", questionId)
     .maybeSingle();
 
+  if (lookupError) return { saved: false, error: lookupError.message };
+
   if (existing) {
-    await supabase.from("bookmarks").delete().eq("id", existing.id);
-    return false;
+    const { error } = await supabase.from("bookmarks").delete().eq("id", existing.id);
+    return error ? { saved: true, error: error.message } : { saved: false };
   }
-  await supabase
+  const { error } = await supabase
     .from("bookmarks")
     .insert({ user_id: userId, question_id: questionId });
-  return true;
+  return error ? { saved: false, error: error.message } : { saved: true };
 }
 
 /** Generate a fresh mock attempt from a blueprint. Returns the attempt id. */
