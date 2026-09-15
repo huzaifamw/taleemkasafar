@@ -39,6 +39,10 @@ export type AIAnalysis = {
   motivationalMessage: string;
   createdAt: string;
   tokensUsed: number;
+  attemptedCount: number;
+  totalQuestions: number;
+  completionPercentage: number;
+  limitedData: boolean;
 };
 
 /**
@@ -60,7 +64,7 @@ export const getAIAnalysisByAttempt = cache(async (attemptId: string): Promise<A
 
   const { data, error } = await supabase
     .from('ai_performance_analysis')
-    .select('*')
+    .select('*, attempts!inner(mock_results(attempted_count, total_questions))')
     .eq('attempt_id', attemptId)
     .eq('user_id', viewer.id)
     .maybeSingle();
@@ -81,7 +85,7 @@ export const getAIAnalysisHistory = cache(async (): Promise<AIAnalysis[]> => {
 
   const { data, error } = await supabase
     .from('ai_performance_analysis')
-    .select('*')
+    .select('*, attempts!inner(mock_results(attempted_count, total_questions))')
     .eq('user_id', viewer.id)
     .order('created_at', { ascending: false })
     .limit(10);
@@ -156,7 +160,23 @@ export const getAnalysisStats = cache(async () => {
 type AnalysisRow =
   Database["public"]["Tables"]["ai_performance_analysis"]["Row"];
 
-function mapAnalysisData(data: AnalysisRow): AIAnalysis {
+type AnalysisRowWithCompletion = AnalysisRow & {
+  attempts?: {
+    mock_results: {
+      attempted_count: number;
+      total_questions: number;
+    } | null;
+  } | null;
+};
+
+function mapAnalysisData(data: AnalysisRowWithCompletion): AIAnalysis {
+  const result = data.attempts?.mock_results;
+  const attemptedCount = result?.attempted_count ?? 0;
+  const totalQuestions = result?.total_questions ?? 0;
+  const completionPercentage = totalQuestions > 0
+    ? Math.round((attemptedCount / totalQuestions) * 100)
+    : 0;
+
   return {
     id: data.id,
     attemptId: data.attempt_id,
@@ -170,6 +190,10 @@ function mapAnalysisData(data: AnalysisRow): AIAnalysis {
     practiceRecommendations: (data.practice_recommendations ?? []) as AIAnalysis["practiceRecommendations"],
     motivationalMessage: data.motivational_message || '',
     createdAt: data.created_at,
-    tokensUsed: data.tokens_used || 0
+    tokensUsed: data.tokens_used || 0,
+    attemptedCount,
+    totalQuestions,
+    completionPercentage,
+    limitedData: totalQuestions > 0 && attemptedCount / totalQuestions < 0.5,
   };
 }

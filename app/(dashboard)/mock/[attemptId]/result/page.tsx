@@ -54,6 +54,8 @@ async function MockResultView({
           <AIAnalysisTrigger 
             attemptId={attemptId} 
             hasExistingAnalysis={!!aiAnalysis}
+            attemptedCount={result.attemptedCount}
+            totalQuestions={result.totalQuestions}
           />
         </div>
       </main>

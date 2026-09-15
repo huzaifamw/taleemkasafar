@@ -6,19 +6,30 @@ import { Icon } from "@/components/dashboard/icon";
 import { triggerAIAnalysis } from "@/app/(dashboard)/insights/actions";
 import { AIThinkingLoader } from "./ai-thinking-loader";
 import { AIErrorState } from "./ai-error-state";
+import { getAnalysisEligibility } from "@/lib/ai/analysis-eligibility";
 
 interface AIAnalysisTriggerProps {
   attemptId: string;
   hasExistingAnalysis?: boolean;
+  attemptedCount: number;
+  totalQuestions: number;
 }
 
-export function AIAnalysisTrigger({ attemptId, hasExistingAnalysis }: AIAnalysisTriggerProps) {
+export function AIAnalysisTrigger({
+  attemptId,
+  hasExistingAnalysis,
+  attemptedCount,
+  totalQuestions,
+}: AIAnalysisTriggerProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nextAvailable, setNextAvailable] = useState<string | null>(null);
+  const eligibility = getAnalysisEligibility(attemptedCount, totalQuestions);
+  const belowHalf = totalQuestions > 0 && attemptedCount / totalQuestions < 0.5;
 
   const handleTrigger = async () => {
+    if (!eligibility.eligible) return;
     setLoading(true);
     setError(null);
     
@@ -61,6 +72,7 @@ export function AIAnalysisTrigger({ attemptId, hasExistingAnalysis }: AIAnalysis
             <p className="mt-2 text-sm text-gray-600">
               Your personalized performance insights are ready to view.
             </p>
+            {belowHalf && <LimitedDataWarning />}
             <button
               onClick={() => router.push('/insights')}
               className="mt-4 flex items-center gap-2 border-2 border-black bg-brand px-6 py-2 font-bold uppercase shadow-hard transition-transform hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
@@ -85,6 +97,28 @@ export function AIAnalysisTrigger({ attemptId, hasExistingAnalysis }: AIAnalysis
           <p className="mt-2 text-sm text-gray-600">
             Let our AI analyze your performance and provide personalized study recommendations based on your strengths and weaknesses.
           </p>
+
+          <div className="mt-4 border-2 border-black bg-white p-3">
+            <div className="flex items-center justify-between text-xs font-bold uppercase">
+              <span>Answered questions</span>
+              <span>{eligibility.attemptedCount}/{eligibility.totalQuestions} · {eligibility.completionPercentage}%</span>
+            </div>
+            <div className="mt-2 h-2 border border-black bg-gray-100">
+              <div
+                className="h-full bg-brand transition-[width]"
+                style={{ width: `${eligibility.completionPercentage}%` }}
+              />
+            </div>
+          </div>
+
+          {belowHalf && <LimitedDataWarning />}
+
+          {!eligibility.eligible && (
+            <p className="mt-3 border-2 border-black bg-red-50 p-3 text-sm font-semibold text-red-800">
+              AI analysis requires at least {eligibility.requiredAnswers} answered questions.
+              This attempt has {eligibility.attemptedCount}; complete more questions on a future attempt to unlock it.
+            </p>
+          )}
           
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-600">
             <div className="flex items-center gap-1">
@@ -103,7 +137,8 @@ export function AIAnalysisTrigger({ attemptId, hasExistingAnalysis }: AIAnalysis
 
           <button
             onClick={handleTrigger}
-            className="mt-4 flex items-center gap-2 border-2 border-black bg-brand px-6 py-2 font-bold uppercase shadow-hard transition-transform hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+            disabled={!eligibility.eligible}
+            className="mt-4 flex items-center gap-2 border-2 border-black bg-brand px-6 py-2 font-bold uppercase shadow-hard transition-transform hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600 disabled:shadow-none disabled:hover:translate-x-0 disabled:hover:translate-y-0"
           >
             <Icon name="auto_awesome" />
             <span>Generate AI Insights</span>
@@ -114,6 +149,15 @@ export function AIAnalysisTrigger({ attemptId, hasExistingAnalysis }: AIAnalysis
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LimitedDataWarning() {
+  return (
+    <div className="mt-4 flex items-start gap-2 border-2 border-black bg-yellow-100 p-3 text-sm font-semibold">
+      <Icon name="warning" className="mt-0.5 text-lg text-yellow-700" />
+      <span>This analysis is based on limited test data.</span>
     </div>
   );
 }

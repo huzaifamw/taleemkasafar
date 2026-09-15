@@ -1,6 +1,35 @@
 import { getGeminiModel } from "./gemini-client";
 import { buildAnalysisPrompt, type PerformanceData } from "./analysis-prompt";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getAnalysisEligibility,
+  getAnsweredAccuracy,
+  getRequiredSubjectAnswers,
+  isAnsweredSelection,
+} from "./analysis-eligibility";
+import type { Json } from "@/lib/database.types";
+
+type AnalysisItem = { [key: string]: Json | undefined };
+type ParsedAIAnalysis = {
+  performance_tier: string;
+  strengths: string[];
+  weaknesses: string[];
+  weak_subjects: AnalysisItem[];
+  weak_topics: AnalysisItem[];
+  study_recommendations: AnalysisItem[];
+  practice_recommendations: AnalysisItem[];
+  motivational_message: string;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function analysisItems(value: unknown): AnalysisItem[] {
+  return Array.isArray(value)
+    ? value.filter(isRecord).map(item => item as AnalysisItem)
+    : [];
+}
 
 /**
  * Main function to analyze student performance using AI
@@ -28,19 +57,40 @@ export async function analyzePerformance(attemptId: string, userId: string) {
     .replace(/```\n?/g, '')
     .trim();
   
-  let analysis;
+  let parsed: unknown;
   try {
-    analysis = JSON.parse(cleanedResponse);
-  } catch (parseError) {
+    parsed = JSON.parse(cleanedResponse);
+  } catch {
     console.error('Failed to parse AI response:', cleanedResponse.slice(0, 500));
     throw new Error('AI returned invalid JSON format');
   }
 
   // Validate required fields
-  if (!analysis.performance_tier || !analysis.strengths || !analysis.weaknesses) {
-    console.error('Missing required fields in AI response:', analysis);
+  if (
+    !isRecord(parsed) ||
+    typeof parsed.performance_tier !== "string" ||
+    !Array.isArray(parsed.strengths) ||
+    !Array.isArray(parsed.weaknesses)
+  ) {
+    console.error('Missing required fields in AI response:', parsed);
     throw new Error('AI response missing required fields');
   }
+
+  const analysis: ParsedAIAnalysis = {
+    performance_tier: parsed.performance_tier,
+    strengths: parsed.strengths.filter((item): item is string => typeof item === "string"),
+    weaknesses: parsed.weaknesses.filter((item): item is string => typeof item === "string"),
+    weak_subjects: analysisItems(parsed.weak_subjects),
+    weak_topics: analysisItems(parsed.weak_topics),
+    study_recommendations: analysisItems(parsed.study_recommendations),
+    practice_recommendations: analysisItems(parsed.practice_recommendations),
+    motivational_message:
+      typeof parsed.motivational_message === "string" ? parsed.motivational_message : "",
+  };
+
+  // Gemini is instructed to use eligible subjects only. Enforce the same rule
+  // in application code before any structured recommendations are persisted.
+  const safeAnalysis = restrictAnalysisToEligibleSubjects(analysis, performanceData);
 
   // 5. Save to database
   const { data, error } = await supabase
@@ -49,19 +99,19 @@ export async function analyzePerformance(attemptId: string, userId: string) {
       attempt_id: attemptId,
       user_id: userId,
       overall_score: performanceData.overallScore,
-      performance_tier: analysis.performance_tier,
-      weak_subjects: analysis.weak_subjects,
-      weak_topics: analysis.weak_topics,
+      performance_tier: safeAnalysis.performance_tier,
+      weak_subjects: safeAnalysis.weak_subjects,
+      weak_topics: safeAnalysis.weak_topics,
       weak_difficulty_levels: {
         easy: performanceData.difficultyBreakdown.easy.percentage,
         medium: performanceData.difficultyBreakdown.medium.percentage,
         hard: performanceData.difficultyBreakdown.hard.percentage
       },
-      strengths: analysis.strengths,
-      weaknesses: analysis.weaknesses,
-      study_recommendations: analysis.study_recommendations,
-      practice_recommendations: analysis.practice_recommendations,
-      motivational_message: analysis.motivational_message,
+      strengths: safeAnalysis.strengths,
+      weaknesses: safeAnalysis.weaknesses,
+      study_recommendations: safeAnalysis.study_recommendations,
+      practice_recommendations: safeAnalysis.practice_recommendations,
+      motivational_message: safeAnalysis.motivational_message,
       ai_model_used: 'gemini-3.6-flash',
       tokens_used: result.response.usageMetadata?.totalTokenCount || 0
     })
@@ -86,15 +136,20 @@ async function fetchPerformanceData(
   const { data: mockResult, error: mockError } = await supabase
     .from('mock_results')
     .select(`
-      *,
+      attempted_count,
+      total_questions,
+      score_percent,
+      total_time_ms,
       attempts!inner(
         id,
+        user_id,
         entry_test_id,
         submitted_at,
         entry_tests(name)
       )
     `)
     .eq('attempt_id', attemptId)
+    .eq('attempts.user_id', userId)
     .single();
 
   if (mockError || !mockResult) {
@@ -102,29 +157,21 @@ async function fetchPerformanceData(
     throw new Error('Mock result not found');
   }
 
-  console.log('Mock result per_subject structure:', JSON.stringify(mockResult.per_subject).slice(0, 200));
-
-  // Subject breakdown from mock_results.per_subject
-  // Handle both array format and object format
-  let subjectData: any[] = [];
-  if (Array.isArray(mockResult.per_subject)) {
-    subjectData = mockResult.per_subject;
-  } else if (mockResult.per_subject && typeof mockResult.per_subject === 'object') {
-    // If it's an object, convert to array
-    subjectData = Object.values(mockResult.per_subject);
+  const eligibility = getAnalysisEligibility(
+    mockResult.attempted_count,
+    mockResult.total_questions,
+  );
+  if (!eligibility.eligible) {
+    throw new Error(
+      `AI analysis requires at least ${eligibility.requiredAnswers} answered questions. This attempt has ${eligibility.attemptedCount}.`,
+    );
   }
-
-  const subjectBreakdown = subjectData.map((s: any) => ({
-    subject: s.subject_name || s.name || 'Unknown',
-    score: s.correct_count || s.correct || 0,
-    total: s.total_questions || s.total || 1,
-    percentage: Math.round(((s.correct_count || s.correct || 0) / (s.total_questions || s.total || 1)) * 100)
-  }));
 
   // Fetch all answers for this attempt with question details
   const { data: answers, error: answersError } = await supabase
     .from('attempt_answers')
     .select(`
+      selected_option_id,
       is_correct,
       questions!inner(
         id,
@@ -141,6 +188,73 @@ async function fetchPerformanceData(
     throw new Error('Failed to fetch answer details');
   }
 
+  const allAnswers = answers ?? [];
+  // Frozen mock rows include unanswered questions with a null option. Keep them
+  // only for sample-size totals; never include them in accuracy calculations.
+  const answered = allAnswers.filter(answer =>
+    isAnsweredSelection(answer.selected_option_id),
+  );
+
+  type SubjectStats = {
+    id: string;
+    subject: string;
+    availableTotal: number;
+    answered: number;
+    correct: number;
+  };
+  const subjectMap = new Map<string, SubjectStats>();
+
+  for (const answer of allAnswers) {
+    const question = answer.questions;
+    const subjectId = question?.subject_id as string | undefined;
+    if (!subjectId) continue;
+    const stats = subjectMap.get(subjectId) ?? {
+      id: subjectId,
+      subject: question.subjects?.name || 'Unknown Subject',
+      availableTotal: 0,
+      answered: 0,
+      correct: 0,
+    };
+    stats.availableTotal++;
+    if (isAnsweredSelection(answer.selected_option_id)) {
+      stats.answered++;
+      if (answer.is_correct === true) stats.correct++;
+    }
+    subjectMap.set(subjectId, stats);
+  }
+
+  const eligibleSubjectIds = new Set<string>();
+  const subjectBreakdown: PerformanceData["subjectBreakdown"] = [];
+  const excludedSubjects: PerformanceData["excludedSubjects"] = [];
+
+  for (const stats of subjectMap.values()) {
+    const requiredAnswers = getRequiredSubjectAnswers(stats.availableTotal);
+    if (stats.answered >= requiredAnswers) {
+      eligibleSubjectIds.add(stats.id);
+      subjectBreakdown.push({
+        subject: stats.subject,
+        score: stats.correct,
+        total: stats.answered,
+        availableTotal: stats.availableTotal,
+        requiredAnswers,
+        percentage: stats.answered > 0
+          ? Math.round((stats.correct / stats.answered) * 100)
+          : 0,
+      });
+    } else {
+      excludedSubjects.push({
+        subject: stats.subject,
+        answered: stats.answered,
+        availableTotal: stats.availableTotal,
+        requiredAnswers,
+      });
+    }
+  }
+
+  const eligibleAnswers = answered.filter(answer =>
+    eligibleSubjectIds.has(answer.questions?.subject_id),
+  );
+
   // Group by topics to get topic breakdown
   const topicMap = new Map<string, {
     topic: string;
@@ -149,7 +263,7 @@ async function fetchPerformanceData(
     total: number;
   }>();
 
-  answers?.forEach((answer: any) => {
+  eligibleAnswers.forEach(answer => {
     const topicId = answer.questions.topic_id;
     if (!topicId) return;
 
@@ -182,7 +296,7 @@ async function fetchPerformanceData(
     hard: { correct: 0, total: 0 }
   };
 
-  answers?.forEach((answer: any) => {
+  eligibleAnswers.forEach(answer => {
     const diff = answer.questions.difficulty as 'easy' | 'medium' | 'hard';
     if (difficultyMap[diff]) {
       difficultyMap[diff].total++;
@@ -212,6 +326,7 @@ async function fetchPerformanceData(
   };
 
   // Fetch previous 5 attempts for comparison
+  const currentAttempt = mockResult.attempts;
   const { data: previousAttempts } = await supabase
     .from('mock_results')
     .select(`
@@ -219,24 +334,74 @@ async function fetchPerformanceData(
       attempts!inner(submitted_at)
     `)
     .eq('attempts.user_id', userId)
+    .eq('attempts.entry_test_id', currentAttempt?.entry_test_id)
     .neq('attempt_id', attemptId)
     .not('attempts.submitted_at', 'is', null)
     .order('attempts.submitted_at', { ascending: false })
     .limit(5);
 
   return {
-    overallScore: mockResult.score_percent,
+    overallScore: Number(mockResult.score_percent),
+    answeredAccuracy: getAnsweredAccuracy(
+      allAnswers.map(answer => ({
+        selectedOptionId: answer.selected_option_id,
+        isCorrect: answer.is_correct,
+      })),
+    ),
+    attemptedCount: eligibility.attemptedCount,
+    totalQuestions: eligibility.totalQuestions,
+    completionPercentage: eligibility.completionPercentage,
+    limitedData: eligibility.limitedData,
     timeTaken: mockResult.total_time_ms || 0,
-    testName: (mockResult.attempts as any)?.entry_tests?.name || 'Mock Test',
+    testName: currentAttempt?.entry_tests?.name || 'Mock Test',
     subjectBreakdown,
+    excludedSubjects,
     topicBreakdown,
     difficultyBreakdown,
     previousAttempts: previousAttempts?.map(a => ({
-      date: new Date((a.attempts as any).submitted_at).toLocaleDateString('en-US', {
+      date: new Date(a.attempts.submitted_at!).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric'
       }),
       score: a.score_percent
     })) || []
+  };
+}
+
+function restrictAnalysisToEligibleSubjects(
+  analysis: ParsedAIAnalysis,
+  performanceData: PerformanceData,
+) {
+  const normalize = (value: unknown) =>
+    typeof value === "string" ? value.trim().toLowerCase() : "";
+  const allowedSubjects = new Set(
+    performanceData.subjectBreakdown.map(subject => normalize(subject.subject)),
+  );
+  const allowedTopics = new Set(
+    performanceData.topicBreakdown.map(
+      topic => `${normalize(topic.subject)}::${normalize(topic.topic)}`,
+    ),
+  );
+  const excludedNames = performanceData.excludedSubjects
+    .map(subject => normalize(subject.subject))
+    .filter(Boolean);
+  const mentionsExcludedSubject = (value: unknown) => {
+    const text = normalize(value);
+    return excludedNames.some(name => text.includes(name));
+  };
+  const allowedSubjectItem = (item: AnalysisItem) =>
+    item && allowedSubjects.has(normalize(item.subject));
+  const allowedTopicItem = (item: AnalysisItem) =>
+    allowedSubjectItem(item) &&
+    allowedTopics.has(`${normalize(item.subject)}::${normalize(item.topic)}`);
+
+  return {
+    ...analysis,
+    strengths: analysis.strengths.filter(item => !mentionsExcludedSubject(item)),
+    weaknesses: analysis.weaknesses.filter(item => !mentionsExcludedSubject(item)),
+    weak_subjects: analysis.weak_subjects.filter(allowedSubjectItem),
+    weak_topics: analysis.weak_topics.filter(allowedTopicItem),
+    study_recommendations: analysis.study_recommendations.filter(allowedSubjectItem),
+    practice_recommendations: analysis.practice_recommendations.filter(allowedTopicItem),
   };
 }

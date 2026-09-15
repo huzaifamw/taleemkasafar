@@ -1,12 +1,26 @@
 export interface PerformanceData {
   overallScore: number;
+  answeredAccuracy: number;
+  attemptedCount: number;
+  totalQuestions: number;
+  completionPercentage: number;
+  limitedData: boolean;
   timeTaken: number;
   testName: string;
   subjectBreakdown: Array<{
     subject: string;
     score: number;
+    /** Answered-question denominator used for accuracy. */
     total: number;
+    availableTotal: number;
+    requiredAnswers: number;
     percentage: number;
+  }>;
+  excludedSubjects: Array<{
+    subject: string;
+    answered: number;
+    availableTotal: number;
+    requiredAnswers: number;
   }>;
   topicBreakdown: Array<{
     topic: string;
@@ -35,11 +49,21 @@ export function buildAnalysisPrompt(data: PerformanceData): string {
 **STUDENT PERFORMANCE DATA:**
 
 Overall Score: ${data.overallScore}% (${data.overallScore >= 75 ? 'Good' : data.overallScore >= 60 ? 'Average' : 'Needs Work'})
+Answered-question accuracy: ${data.answeredAccuracy}%
+Completion: ${data.attemptedCount}/${data.totalQuestions} answered (${data.completionPercentage}%)
+Data confidence: ${data.limitedData ? 'LIMITED — the student answered less than 50% of the test' : 'SUFFICIENT'}
 Time Taken: ${Math.floor(data.timeTaken / 60000)} minutes
 Test: ${data.testName}
 
-**SUBJECT-WISE PERFORMANCE:**
-${data.subjectBreakdown.map(s => `- ${s.subject}: ${s.score}/${s.total} (${s.percentage}%)`).join('\n')}
+**ELIGIBLE SUBJECT PERFORMANCE (ANSWERED QUESTIONS ONLY):**
+${data.subjectBreakdown.length > 0
+  ? data.subjectBreakdown.map(s => `- ${s.subject}: ${s.score}/${s.total} answered correctly (${s.percentage}% accuracy); ${s.total}/${s.availableTotal} questions answered; minimum sample ${s.requiredAnswers}`).join('\n')
+  : '- No subject has enough answered questions for subject-specific analysis.'}
+
+**SUBJECTS EXCLUDED FOR INSUFFICIENT DATA:**
+${data.excludedSubjects.length > 0
+  ? data.excludedSubjects.map(s => `- ${s.subject}: ${s.answered}/${s.availableTotal} answered; requires ${s.requiredAnswers}`).join('\n')
+  : '- None'}
 
 **TOPIC-WISE PERFORMANCE (Top weakest topics):**
 ${data.topicBreakdown
@@ -122,6 +146,11 @@ Generate a comprehensive, personalized performance analysis with actionable stud
 8. Limit to 5 study recommendations maximum (prioritize top weaknesses)
 9. Limit to 3-5 practice recommendations
 10. Motivational message should mention specific numbers and realistic goals
+11. Never count or describe an unanswered question as incorrect
+12. Subject, topic, difficulty, weakness, and practice recommendations must use only ELIGIBLE SUBJECT PERFORMANCE
+13. Never infer ability, weakness, or strength for a subject listed under SUBJECTS EXCLUDED FOR INSUFFICIENT DATA
+14. Use answered-question denominators for accuracy; the official overall score may include unanswered-question scoring
+15. If data confidence is LIMITED, explicitly acknowledge that conclusions are preliminary
 
 **RESPOND ONLY WITH VALID JSON. NO MARKDOWN, NO EXPLANATIONS, JUST JSON.**`;
 }

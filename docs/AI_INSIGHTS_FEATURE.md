@@ -29,6 +29,13 @@ The AI-Powered Performance Insights feature uses Gemini AI to analyze student mo
   - Difficulty-wise scores
   - Historical attempt comparison
   - Structured JSON output format
+  - Answered-question-only accuracy and data-confidence context
+
+- **analysis-eligibility.ts**: Centralizes evidence rules:
+  - At least 30% of the mock must be answered before analysis is unlocked
+  - Results below 50% completion are marked as limited test data
+  - Each subject requires `max(3, ceil(subject questions × 30%))` answers
+    (capped at the number of questions available for very small sections)
 
 - **quota-manager.ts**: Enforces usage limits:
   - 3 analyses per user per day
@@ -37,6 +44,9 @@ The AI-Powered Performance Insights feature uses Gemini AI to analyze student mo
 
 - **analyze-performance.ts**: Main analysis engine
   - Fetches comprehensive performance data
+  - Excludes unanswered questions from subject, topic, and difficulty accuracy
+  - Excludes subjects without a sufficient answered sample
+  - Enforces eligible subjects again on structured AI output before saving
   - Calls Gemini API
   - Parses and validates AI response
   - Saves results to database
@@ -99,9 +109,11 @@ The AI-Powered Performance Insights feature uses Gemini AI to analyze student mo
    - Views results page
 
 2. **Generate AI Analysis**
+   - Answer at least 30% of the mock test
    - Click "Generate AI Insights" button
    - AI analyzes performance (3-5 seconds)
    - Checks quota limits automatically
+   - Attempts below 30% are rejected before quota checks or AI usage
 
 3. **View Insights**
    - Performance tier badge
@@ -123,6 +135,21 @@ The AI-Powered Performance Insights feature uses Gemini AI to analyze student mo
 - **Cooldown**: 30 minutes between analyses
 - **Platform**: 1000 analyses per day total
 
+## Evidence and Accuracy Rules
+
+- Unlock threshold: at least 30% of all mock questions answered.
+- Limited-data range: 30% through less than 50% answered. The result and
+  Insights pages display: “This analysis is based on limited test data.”
+- Subject threshold: at least 30% of that subject's questions answered, with a
+  minimum sample of three where the section contains at least three questions.
+- Unanswered frozen mock rows are used only to determine available sample size.
+  They never enter accuracy denominators and are never treated as incorrect
+  when identifying weak subjects, topics, or difficulty levels.
+- The official mock score remains unchanged and may include the test's
+  unanswered-question scoring rule. AI weak-area accuracy uses answered
+  questions only.
+- Existing analyses remain viewable even if they predate these thresholds.
+
 ## AI Analysis Output
 
 The AI provides:
@@ -143,7 +170,7 @@ The AI provides:
 
 ## Technical Stack
 
-- **AI Model**: Google Gemini 1.5 Flash
+- **AI Model**: The Gemini model configured in `lib/ai/gemini-client.ts`
 - **Database**: Supabase PostgreSQL
 - **Framework**: Next.js 15 with Server Actions
 - **UI**: Neobrutalist design with Material Icons
@@ -194,6 +221,10 @@ Get your API key from: https://makersuite.google.com/app/apikey
 - [x] Loading states implemented
 - [x] Error handling with retry
 - [x] Quota limits enforced
+- [x] 30% server-side eligibility threshold enforced before quota usage
+- [x] Limited-data warning below 50% completion
+- [x] Insufficient subject samples excluded
+- [x] Unanswered questions excluded from weak-area accuracy
 - [ ] Build passes (admin panel type issues unrelated to feature)
 - [ ] Manual testing: Complete mock test and generate analysis
 - [ ] Verify AI response parsing

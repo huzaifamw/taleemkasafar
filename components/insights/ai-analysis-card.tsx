@@ -32,6 +32,13 @@ export function AIAnalysisCard({ analysis }: AIAnalysisCardProps) {
         <PerformanceBadge tier={analysis.performanceTier} score={analysis.overallScore} />
       </div>
 
+      {analysis.limitedData && (
+        <div className="mb-6 flex items-start gap-2 border-2 border-black bg-yellow-100 p-3 text-sm font-semibold">
+          <Icon name="warning" className="mt-0.5 text-lg text-yellow-700" />
+          <span>This analysis is based on limited test data.</span>
+        </div>
+      )}
+
       {/* Overall Score */}
       <div className="mb-6 border-2 border-black bg-gray-50 p-4">
         <div className="flex items-center justify-between">

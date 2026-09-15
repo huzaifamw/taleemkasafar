@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { checkAIQuota } from "@/lib/ai/quota-manager";
 import { analyzePerformance } from "@/lib/ai/analyze-performance";
+import { getAnalysisEligibility } from "@/lib/ai/analysis-eligibility";
+import type { Database } from "@/lib/database.types";
 
 /**
  * Trigger AI analysis for a mock test attempt
@@ -22,6 +24,7 @@ export async function triggerAIAnalysis(attemptId: string) {
     .from('ai_performance_analysis')
     .select('id')
     .eq('attempt_id', attemptId)
+    .eq('user_id', user.id)
     .maybeSingle();
 
   if (existing) {
@@ -29,6 +32,31 @@ export async function triggerAIAnalysis(attemptId: string) {
       success: true, 
       analysisId: existing.id, 
       message: "Analysis already exists" 
+    };
+  }
+
+  // Enforce evidence requirements before checking quota or calling Gemini.
+  // The ownership predicate prevents another user's result from being probed.
+  const { data: mockResult, error: resultError } = await supabase
+    .from("mock_results")
+    .select("attempted_count, total_questions, attempts!inner(user_id)")
+    .eq("attempt_id", attemptId)
+    .eq("attempts.user_id", user.id)
+    .maybeSingle();
+
+  if (resultError || !mockResult) {
+    return { success: false, error: "Mock result not found" };
+  }
+
+  const eligibility = getAnalysisEligibility(
+    mockResult.attempted_count,
+    mockResult.total_questions,
+  );
+  if (!eligibility.eligible) {
+    return {
+      success: false,
+      error: `AI analysis requires at least ${eligibility.requiredAnswers} answered questions. This attempt has ${eligibility.attemptedCount}.`,
+      eligibility,
     };
   }
 
@@ -66,7 +94,9 @@ export async function updateStudyProgress(
 ) {
   const supabase = await createClient();
 
-  const updates: any = { status };
+  const updates: Database["public"]["Tables"]["study_progress"]["Update"] = {
+    status,
+  };
 
   if (status === 'in_progress') {
     updates.started_at = new Date().toISOString();
