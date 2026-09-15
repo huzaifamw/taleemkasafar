@@ -336,7 +336,7 @@ log_info "Next Steps:"
 echo "  1. Restart your application server (if needed)"
 echo "  2. Clear frontend cache/rebuild"
 echo "  3. Test in UI: Go to dashboard and select 'PU Lahore' from dropdown"
-echo "  4. Run integration tests: See docs/PU_INTEGRATION_TEST_PLAN.md"
+echo "  4. Run the project test suite"
 echo "  5. Monitor for errors in first 24 hours"
 echo
 log_info "Rollback Instructions:"

@@ -160,17 +160,6 @@ Visit [http://localhost:3000](http://localhost:3000)
 4. Add environment variables
 5. Deploy!
 
-See [DEPLOYMENT-GUIDE.md](./DEPLOYMENT-GUIDE.md) for detailed instructions.
-
----
-
-## 📚 Documentation
-
-- **[Deployment Guide](./DEPLOYMENT-GUIDE.md)** - Complete deployment instructions
-- **[Deployment Checklist](./DEPLOYMENT-CHECKLIST.md)** - Step-by-step deployment
-- **[PU Test Setup](./docs/PU_TEST_SETUP.md)** - PU test configuration
-- **[Admin Guide](./docs/PU_ADMIN_GUIDE.md)** - Admin panel usage
-
 ---
 
 ## 🤝 Contributing
