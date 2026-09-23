@@ -1,4 +1,4 @@
-import { getGeminiModel } from "./gemini-client";
+import { GEMINI_MODEL, getGeminiModel } from "./gemini-client";
 import { buildAnalysisPrompt, type PerformanceData } from "./analysis-prompt";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -112,7 +112,7 @@ export async function analyzePerformance(attemptId: string, userId: string) {
       study_recommendations: safeAnalysis.study_recommendations,
       practice_recommendations: safeAnalysis.practice_recommendations,
       motivational_message: safeAnalysis.motivational_message,
-      ai_model_used: 'gemini-3.6-flash',
+      ai_model_used: GEMINI_MODEL,
       tokens_used: result.response.usageMetadata?.totalTokenCount || 0
     })
     .select()

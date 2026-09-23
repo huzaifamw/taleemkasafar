@@ -1340,6 +1340,7 @@ export type Database = {
       admin_delete_user: { Args: { p_user_id: string }; Returns: Json }
       admin_unban_user: { Args: { p_user_id: string }; Returns: Json }
       generate_mock_attempt: { Args: { p_blueprint: string }; Returns: string }
+      save_mock_blueprint: { Args: { p_payload: Json }; Returns: string }
       get_admin_dashboard_stats: { Args: never; Returns: Json }
       get_all_users_admin: {
         Args: { p_page?: number; p_page_size?: number; p_search?: string }

@@ -1,148 +1,191 @@
 "use client";
 
-import { useState } from "react";
-import type { Database } from "@/lib/database.types";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  deleteMockBlueprint,
+  toggleMockBlueprintActive,
+} from "@/app/admin/entry-tests/actions";
+import { MockBlueprintForm } from "@/components/admin/mock-blueprint-form";
+import type { AdminMockBlueprint } from "@/lib/queries/admin-entry-tests";
 
-type MockBlueprint = Database["public"]["Tables"]["mock_test_blueprints"]["Row"];
-type TestSubject = {
-  id: string;
-  subject_name?: string;
-};
+type TestSubject = { id: string; subject_name?: string };
 
 type MockBlueprintsListProps = {
   entryTestId: string;
-  blueprints: MockBlueprint[];
+  blueprints: AdminMockBlueprint[];
   testSubjects: TestSubject[];
 };
+
+type FormState =
+  | { mode: "create" }
+  | { mode: "edit"; blueprint: AdminMockBlueprint }
+  | null;
 
 export function MockBlueprintsList({
   entryTestId,
   blueprints,
   testSubjects,
 }: MockBlueprintsListProps) {
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const router = useRouter();
+  const [form, setForm] = useState<FormState>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
+    if (hours === 0) return `${minutes}m`;
+    return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
+  };
+
+  const finishSave = () => {
+    setForm(null);
+    setActionError(null);
+    router.refresh();
+  };
+
+  const handleToggle = (blueprint: AdminMockBlueprint) => {
+    setActionError(null);
+    startTransition(async () => {
+      const result = await toggleMockBlueprintActive(
+        blueprint.id,
+        entryTestId,
+        !blueprint.is_active,
+      );
+      if (!result.success) {
+        setActionError(result.error ?? "Unable to update the blueprint.");
+        return;
+      }
+      router.refresh();
+    });
+  };
+
+  const handleDelete = (blueprintId: string) => {
+    setActionError(null);
+    startTransition(async () => {
+      const result = await deleteMockBlueprint(blueprintId, entryTestId);
+      if (!result.success) {
+        setActionError(result.error ?? "Unable to delete the blueprint.");
+        return;
+      }
+      setConfirmDeleteId(null);
+      router.refresh();
+    });
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">Mock Test Configurations</h2>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Mock Test Configurations</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Create validated patterns used to generate student mock attempts.
+          </p>
+        </div>
         <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm"
+          onClick={() => {
+            setActionError(null);
+            setForm(form?.mode === "create" ? null : { mode: "create" });
+          }}
+          className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700"
         >
-          {showCreateForm ? "Cancel" : "+ Create Blueprint"}
+          {form?.mode === "create" ? "Cancel" : "+ Create Blueprint"}
         </button>
       </div>
 
-      {showCreateForm && (
-        <div className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-          <p className="text-sm text-purple-800 mb-2">
-            🚧 Blueprint creation form coming soon. This will allow you to:
-          </p>
-          <ul className="text-sm text-purple-700 space-y-1 list-disc list-inside">
-            <li>Define test name and duration</li>
-            <li>Set total number of questions</li>
-            <li>Configure question distribution per subject</li>
-            <li>Set difficulty mix (easy/medium/hard)</li>
-            <li>Define past paper vs practice question ratios</li>
-          </ul>
+      {actionError && (
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {actionError}
         </div>
+      )}
+
+      {form && (
+        <MockBlueprintForm
+          key={form.mode === "edit" ? form.blueprint.id : "new"}
+          entryTestId={entryTestId}
+          blueprint={form.mode === "edit" ? form.blueprint : undefined}
+          testSubjects={testSubjects}
+          onCancel={() => setForm(null)}
+          onSaved={finishSave}
+        />
       )}
 
       {blueprints.length === 0 ? (
-        <div className="text-center py-12 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-          <p className="text-lg mb-2">No mock blueprints configured yet</p>
-          <p className="text-sm mb-4">
-            Create a blueprint to define mock test patterns for this entry test
-          </p>
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="text-purple-600 hover:text-purple-700 font-medium"
-          >
-            Create Your First Blueprint →
-          </button>
+        <div className="rounded-lg border-2 border-dashed border-gray-300 py-12 text-center text-gray-500">
+          <p className="mb-2 text-lg">No mock blueprints configured yet</p>
+          <p className="mb-4 text-sm">Create a blueprint to define the mock pattern for this entry test.</p>
+          {!form && (
+            <button onClick={() => setForm({ mode: "create" })} className="font-medium text-purple-600 hover:text-purple-700">
+              Create your first blueprint →
+            </button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {blueprints.map((blueprint) => (
-            <div
-              key={blueprint.id}
-              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{blueprint.name}</h3>
-                  {blueprint.description && (
-                    <p className="text-sm text-gray-600 mt-1">{blueprint.description}</p>
-                  )}
-                </div>
-                <span
-                  className={`px-2 py-1 text-xs font-semibold rounded ${
-                    blueprint.is_active
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {blueprint.is_active ? "Active" : "Inactive"}
-                </span>
-              </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {blueprints.map((blueprint) => {
+            const slotCount = blueprint.mock_blueprint_slots.length;
+            const pastPaperCount = blueprint.mock_blueprint_slots.reduce(
+              (sum, slot) => sum + slot.past_paper_min,
+              0,
+            );
+            const practiceCount = blueprint.mock_blueprint_slots.reduce(
+              (sum, slot) => sum + (slot.practice_max ?? slot.question_count - slot.past_paper_min),
+              0,
+            );
+            const isConfirmingDelete = confirmDeleteId === blueprint.id;
 
-              <div className="grid grid-cols-3 gap-3 text-sm">
-                <div>
-                  <p className="text-gray-600">Duration</p>
-                  <p className="font-semibold text-gray-900">
-                    {formatDuration(blueprint.duration_seconds)}
-                  </p>
+            return (
+              <article key={blueprint.id} className="rounded-xl border border-gray-200 bg-white p-5 transition-shadow hover:shadow-md">
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{blueprint.name}</h3>
+                    {blueprint.description && <p className="mt-1 line-clamp-2 text-sm text-gray-600">{blueprint.description}</p>}
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${blueprint.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-700"}`}>
+                    {blueprint.is_active ? "Active" : "Inactive"}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-gray-600">Total Questions</p>
-                  <p className="font-semibold text-gray-900">{blueprint.total_questions}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">
-                    {blueprint.scoring_mode === "section_weighted"
-                      ? "Scoring"
-                      : "Total Marks"}
-                  </p>
-                  <p className="font-semibold text-gray-900">
-                    {blueprint.scoring_mode === "section_weighted"
-                      ? "Section weighted"
-                      : blueprint.total_questions *
-                        Number(blueprint.marks_per_correct)}
-                  </p>
-                </div>
-              </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end gap-2">
-                <button className="text-sm text-blue-600 hover:text-blue-900">
-                  Configure Slots
-                </button>
-                <button className="text-sm text-purple-600 hover:text-purple-900">
-                  Edit
-                </button>
-                <button className="text-sm text-red-600 hover:text-red-900">
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+                <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                  <div><dt className="text-gray-500">Duration</dt><dd className="font-semibold text-gray-900">{formatDuration(blueprint.duration_seconds)}</dd></div>
+                  <div><dt className="text-gray-500">Questions</dt><dd className="font-semibold text-gray-900">{blueprint.total_questions}</dd></div>
+                  <div><dt className="text-gray-500">Subjects</dt><dd className="font-semibold text-gray-900">{slotCount}</dd></div>
+                  <div><dt className="text-gray-500">Scoring</dt><dd className="font-semibold text-gray-900">{blueprint.scoring_mode === "section_weighted" ? "Weighted" : "Uniform"}</dd></div>
+                </dl>
+
+                <div className="mt-4 rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                  Source mix: <span className="font-medium text-gray-800">{pastPaperCount} past paper</span> · <span className="font-medium text-gray-800">{practiceCount} practice</span>
+                </div>
+
+                {isConfirmingDelete ? (
+                  <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3">
+                    <p className="text-sm text-red-800">Delete this blueprint and all of its slots? Blueprints already used for attempts cannot be deleted.</p>
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button type="button" disabled={isPending} onClick={() => setConfirmDeleteId(null)} className="rounded px-3 py-1.5 text-sm text-gray-700 hover:bg-white disabled:opacity-50">Cancel</button>
+                      <button type="button" disabled={isPending} onClick={() => handleDelete(blueprint.id)} className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">{isPending ? "Deleting…" : "Confirm delete"}</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4 flex flex-wrap justify-end gap-x-4 gap-y-2 border-t border-gray-200 pt-4">
+                    <button type="button" disabled={isPending} onClick={() => setForm({ mode: "edit", blueprint })} className="text-sm font-medium text-blue-600 hover:text-blue-900 disabled:opacity-50">Configure slots</button>
+                    <button type="button" disabled={isPending} onClick={() => setForm({ mode: "edit", blueprint })} className="text-sm font-medium text-purple-600 hover:text-purple-900 disabled:opacity-50">Edit</button>
+                    <button type="button" disabled={isPending} onClick={() => handleToggle(blueprint)} className="text-sm font-medium text-amber-700 hover:text-amber-900 disabled:opacity-50">{blueprint.is_active ? "Deactivate" : "Activate"}</button>
+                    <button type="button" disabled={isPending} onClick={() => setConfirmDeleteId(blueprint.id)} className="text-sm font-medium text-red-600 hover:text-red-900 disabled:opacity-50">Delete</button>
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </div>
       )}
 
-      {/* Info Section */}
       {blueprints.length > 0 && (
-        <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h3 className="font-semibold text-gray-900 mb-2">Need Help?</h3>
-          <p className="text-sm text-gray-600">
-            Each blueprint can have multiple "slots" that define how questions are distributed
-            across subjects. Click "Configure Slots" on a blueprint to set up the question
-            distribution.
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <h3 className="font-semibold text-blue-900">Configuration safety</h3>
+          <p className="mt-1 text-sm text-blue-800">
+            All slot totals and relationships are validated before saving. A blueprint with generated attempts cannot be structurally edited or deleted; deactivate it and create a replacement instead.
           </p>
         </div>
       )}

@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import {
+  validateMockBlueprint,
+  type MockBlueprintInput,
+} from "@/lib/admin/mock-blueprint";
+import type { Json } from "@/lib/database.types";
 
 export type ActionResult = {
   success: boolean;
@@ -409,5 +414,191 @@ export async function removeSubjectFromTest(
   }
 
   revalidatePath("/admin/entry-tests");
+  return { success: true };
+}
+
+/**
+ * Create or update a complete mock blueprint in one database transaction.
+ */
+export async function saveMockBlueprint(
+  input: MockBlueprintInput,
+): Promise<ActionResult> {
+  const validationError = validateMockBlueprint(input);
+  if (validationError) {
+    return { success: false, error: validationError };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+
+  if (!currentUser) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("user_id", currentUser.id)
+    .eq("is_active", true)
+    .single();
+
+  if (!admin) {
+    return { success: false, error: "Admin access required" };
+  }
+
+  const payload = {
+    blueprint_id: input.id ?? null,
+    entry_test_id: input.entryTestId,
+    name: input.name.trim(),
+    description: input.description.trim(),
+    duration_seconds: input.durationSeconds,
+    total_questions: input.totalQuestions,
+    scoring_mode: input.scoringMode,
+    marks_per_correct: input.marksPerCorrect,
+    marks_per_incorrect: input.marksPerIncorrect,
+    marks_per_unanswered: input.marksPerUnanswered,
+    is_active: input.isActive,
+    display_order: input.displayOrder,
+    slots: input.slots.map((slot) => ({
+      test_subject_id: slot.testSubjectId,
+      question_count: slot.questionCount,
+      past_paper_min: slot.pastPaperCount,
+      practice_max: slot.practiceCount,
+      difficulty_mix: {
+        easy: slot.easyCount,
+        medium: slot.mediumCount,
+        hard: slot.hardCount,
+      },
+      weight_percent:
+        input.scoringMode === "section_weighted"
+          ? slot.weightPercent
+          : null,
+      section_duration_seconds:
+        input.scoringMode === "section_weighted"
+          ? slot.sectionDurationSeconds
+          : null,
+      display_order: slot.displayOrder,
+    })),
+  };
+
+  const { data, error } = await supabase.rpc("save_mock_blueprint", {
+    p_payload: payload as Json,
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/entry-tests");
+  revalidatePath(`/admin/entry-tests/${input.entryTestId}`);
+  revalidatePath(`/admin/entry-tests/${input.entryTestId}/blueprints`);
+  return { success: true, data };
+}
+
+/** Toggle availability without structurally changing a blueprint already in use. */
+export async function toggleMockBlueprintActive(
+  blueprintId: string,
+  entryTestId: string,
+  isActive: boolean,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+
+  if (!currentUser) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("user_id", currentUser.id)
+    .eq("is_active", true)
+    .single();
+
+  if (!admin) {
+    return { success: false, error: "Admin access required" };
+  }
+
+  const { data, error } = await supabase
+    .from("mock_test_blueprints")
+    .update({ is_active: isActive, updated_at: new Date().toISOString() })
+    .eq("id", blueprintId)
+    .eq("entry_test_id", entryTestId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  if (!data) {
+    return { success: false, error: "Blueprint not found" };
+  }
+
+  revalidatePath("/admin/entry-tests");
+  revalidatePath(`/admin/entry-tests/${entryTestId}/blueprints`);
+  return { success: true };
+}
+
+/** Delete an unused blueprint and its slots through the existing cascade. */
+export async function deleteMockBlueprint(
+  blueprintId: string,
+  entryTestId: string,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+
+  if (!currentUser) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("user_id", currentUser.id)
+    .eq("is_active", true)
+    .single();
+
+  if (!admin) {
+    return { success: false, error: "Admin access required" };
+  }
+
+  const { count, error: countError } = await supabase
+    .from("attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("blueprint_id", blueprintId);
+
+  if (countError) {
+    return { success: false, error: countError.message };
+  }
+  if ((count ?? 0) > 0) {
+    return {
+      success: false,
+      error: "This blueprint has generated attempts. Deactivate it instead of deleting it.",
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("mock_test_blueprints")
+    .delete()
+    .eq("id", blueprintId)
+    .eq("entry_test_id", entryTestId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  if (!data) {
+    return { success: false, error: "Blueprint not found" };
+  }
+
+  revalidatePath("/admin/entry-tests");
+  revalidatePath(`/admin/entry-tests/${entryTestId}/blueprints`);
   return { success: true };
 }

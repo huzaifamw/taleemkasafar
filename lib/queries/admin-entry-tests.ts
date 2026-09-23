@@ -4,6 +4,11 @@ import type { Database } from "@/lib/database.types";
 type EntryTest = Database["public"]["Tables"]["entry_tests"]["Row"];
 type TestSubject = Database["public"]["Tables"]["test_subjects"]["Row"];
 type MockBlueprint = Database["public"]["Tables"]["mock_test_blueprints"]["Row"];
+type MockBlueprintSlot = Database["public"]["Tables"]["mock_blueprint_slots"]["Row"];
+
+export type AdminMockBlueprint = MockBlueprint & {
+  mock_blueprint_slots: MockBlueprintSlot[];
+};
 
 export type AdminEntryTest = EntryTest & {
   subjects_count?: number;
@@ -15,7 +20,7 @@ export type AdminEntryTest = EntryTest & {
 };
 
 export type EntryTestWithDetails = AdminEntryTest & {
-  mock_blueprints?: MockBlueprint[];
+  mock_blueprints?: AdminMockBlueprint[];
 };
 
 /**
@@ -145,7 +150,7 @@ export async function getEntryTestById(
   // Get mock blueprints
   const { data: mockBlueprints } = await supabase
     .from("mock_test_blueprints")
-    .select("*")
+    .select("*, mock_blueprint_slots(*)")
     .eq("entry_test_id", id)
     .order("display_order");
 
@@ -164,7 +169,13 @@ export async function getEntryTestById(
       ...ts,
       subject_name: ts.subjects?.name,
     })) || [],
-    mock_blueprints: mockBlueprints || [],
+    mock_blueprints:
+      mockBlueprints?.map((blueprint) => ({
+        ...blueprint,
+        mock_blueprint_slots: [...blueprint.mock_blueprint_slots].sort(
+          (a, b) => a.display_order - b.display_order,
+        ),
+      })) || [],
   };
 }
 

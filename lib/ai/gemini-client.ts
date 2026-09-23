@@ -6,13 +6,15 @@ if (!process.env.GEMINI_API_KEY) {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+export const GEMINI_MODEL = "gemini-3.5-flash-lite";
+
 /**
  * Get configured Gemini model for performance analysis
- * Using gemini-3.6-flash (latest available model)
+ * Using Gemini Flash-Lite for lower latency and high-throughput analysis.
  */
 export function getGeminiModel() {
   return genAI.getGenerativeModel({
-    model: "gemini-3.6-flash",
+    model: GEMINI_MODEL,
     generationConfig: {
       temperature: 0.7,
       topP: 0.95,

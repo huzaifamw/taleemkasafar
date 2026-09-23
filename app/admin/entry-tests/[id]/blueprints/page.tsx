@@ -22,6 +22,10 @@ export default async function MockBlueprintsPage({ params }: PageProps) {
     notFound();
   }
 
+  const activeTestSubjects = (entryTest.test_subjects || []).filter(
+    (subject) => subject.is_active,
+  );
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -69,7 +73,7 @@ export default async function MockBlueprintsPage({ params }: PageProps) {
       </div>
 
       {/* Prerequisites Check */}
-      {(!entryTest.test_subjects || entryTest.test_subjects.length === 0) ? (
+      {activeTestSubjects.length === 0 ? (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <p className="text-yellow-800 mb-4">
             ⚠️ You need to assign subjects to this entry test before creating mock blueprints.
@@ -87,7 +91,7 @@ export default async function MockBlueprintsPage({ params }: PageProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white p-4 rounded-lg shadow">
               <p className="text-sm text-gray-600">Assigned Subjects</p>
-              <p className="text-2xl font-bold text-gray-900">{entryTest.subjects_count || 0}</p>
+              <p className="text-2xl font-bold text-gray-900">{activeTestSubjects.length}</p>
             </div>
             <div className="bg-white p-4 rounded-lg shadow">
               <p className="text-sm text-gray-600">Total Questions Available</p>
@@ -100,7 +104,7 @@ export default async function MockBlueprintsPage({ params }: PageProps) {
             <MockBlueprintsList
               entryTestId={id}
               blueprints={entryTest.mock_blueprints || []}
-              testSubjects={entryTest.test_subjects || []}
+              testSubjects={activeTestSubjects}
             />
           </div>
         </>

@@ -39,7 +39,10 @@ async function BookmarksView() {
           >
             <Icon name="arrow_back" /> Back to subjects
           </Link>
-          <BookmarkedQuestions initialQuestions={questions} />
+          <BookmarkedQuestions
+            key={dashboard.entryTest.id}
+            initialQuestions={questions}
+          />
         </div>
       </main>
     </>
