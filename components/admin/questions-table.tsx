@@ -7,6 +7,11 @@ import {
   deleteQuestion,
   updateQuestionStatus,
 } from "@/app/admin/questions/actions";
+import {
+  getQuestionModerationLabel,
+  QUESTION_MODERATION,
+  type QuestionModerationStatus,
+} from "@/lib/admin/question-moderation";
 
 type QuestionsTableProps = {
   questions: AdminQuestion[];
@@ -49,7 +54,10 @@ export function QuestionsTable({
 
   const handleApprove = async (questionId: string) => {
     setActioningQuestionId(questionId);
-    const result = await updateQuestionStatus(questionId, "approved");
+    const result = await updateQuestionStatus(
+      questionId,
+      QUESTION_MODERATION.approve,
+    );
 
     if (result.success) {
       startTransition(() => router.refresh());
@@ -66,7 +74,7 @@ export function QuestionsTable({
     setActioningQuestionId(questionId);
     const result = await updateQuestionStatus(
       questionId,
-      "rejected",
+      QUESTION_MODERATION.reject,
       reason || undefined
     );
 
@@ -103,16 +111,14 @@ export function QuestionsTable({
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: QuestionModerationStatus) => {
     switch (status) {
       case "approved":
         return "bg-green-100 text-green-800";
-      case "rejected":
+      case "flagged":
         return "bg-red-100 text-red-800";
-      case "pending":
+      case "draft":
         return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -181,7 +187,7 @@ export function QuestionsTable({
                               }`}
                             >
                               <span className="font-bold mr-2">
-                                {(option as any).label || (option as any).option_label}.
+                                {option.option_label}.
                               </span>
                               {option.content}
                               {option.is_correct && (
@@ -224,7 +230,7 @@ export function QuestionsTable({
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(question.moderation_status)}`}
                     >
-                      {question.moderation_status}
+                      {getQuestionModerationLabel(question.moderation_status)}
                     </span>
                     {question.review_note && (
                       <div className="text-xs text-gray-500 mt-1">
@@ -246,7 +252,7 @@ export function QuestionsTable({
                           Approve
                         </button>
                       )}
-                      {(question.moderation_status as any) !== "rejected" && (
+                      {question.moderation_status !== QUESTION_MODERATION.reject && (
                         <button
                           onClick={() => handleReject(question.id)}
                           disabled={isActioning || isPending}

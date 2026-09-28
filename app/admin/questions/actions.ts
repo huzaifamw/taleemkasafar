@@ -2,6 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { QuestionModerationStatus } from "@/lib/admin/question-moderation";
+import type { Database } from "@/lib/database.types";
+
+type Difficulty = Database["public"]["Enums"]["difficulty"];
 
 export type QuestionActionResult = {
   success: boolean;
@@ -58,7 +62,7 @@ export async function deleteQuestion(
  */
 export async function updateQuestionStatus(
   questionId: string,
-  status: "approved" | "rejected" | "pending",
+  status: QuestionModerationStatus,
   reviewNote?: string
 ): Promise<QuestionActionResult> {
   const supabase = await createClient();
@@ -86,7 +90,7 @@ export async function updateQuestionStatus(
   const { error } = await supabase
     .from("questions")
     .update({
-      moderation_status: status as any,
+      moderation_status: status,
       review_note: reviewNote || null,
     })
     .eq("id", questionId);
@@ -130,7 +134,7 @@ export async function createQuestion(formData: FormData): Promise<QuestionAction
   const statement = formData.get("statement") as string;
   const subjectId = formData.get("subject_id") as string;
   const topicId = (formData.get("topic_id") as string) || null;
-  const difficulty = formData.get("difficulty") as string;
+  const difficultyValue = formData.get("difficulty") as string;
   const explanation = (formData.get("explanation") as string) || null;
   const source = (formData.get("source") as string) || null;
   const externalId = formData.get("external_id") as string;
@@ -142,9 +146,16 @@ export async function createQuestion(formData: FormData): Promise<QuestionAction
   const optionD = formData.get("option_d") as string;
   const correctOption = formData.get("correct_option") as string;
 
-  if (!statement || !subjectId || !difficulty || !externalId) {
+  if (
+    !statement ||
+    !subjectId ||
+    !externalId ||
+    !["easy", "medium", "hard"].includes(difficultyValue)
+  ) {
     return { success: false, error: "Missing required fields" };
   }
+
+  const difficulty = difficultyValue as Difficulty;
 
   if (!optionA || !optionB || !optionC || !optionD || !correctOption) {
     return { success: false, error: "All options and correct answer are required" };
@@ -157,7 +168,7 @@ export async function createQuestion(formData: FormData): Promise<QuestionAction
       statement,
       subject_id: subjectId,
       topic_id: topicId,
-      difficulty: difficulty as any,
+      difficulty,
       explanation,
       source,
       external_id: externalId,
@@ -190,7 +201,7 @@ export async function createQuestion(formData: FormData): Promise<QuestionAction
         content_format: "plain" as const,
         is_correct: opt.is_correct,
         display_order: idx,
-      })) as any
+      })),
     );
 
   if (optionsError) {

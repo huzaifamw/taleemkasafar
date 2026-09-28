@@ -8,7 +8,7 @@ export type AdminUser = {
   email_confirmed_at: string | null;
   banned_until: string | null;
   // User metadata
-  display_name?: string;
+  display_name: string;
   // Statistics
   total_attempts?: number;
   total_mocks?: number;
@@ -37,7 +37,11 @@ export async function getAllUsers(
     return { users: [], total: 0, totalPages: 0 };
   }
 
-  const result = data as any;
+  const result = data as unknown as {
+    users?: AdminUser[];
+    total?: number;
+    totalPages?: number;
+  };
   return {
     users: result?.users || [],
     total: result?.total || 0,

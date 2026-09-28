@@ -114,7 +114,10 @@ export function UsersTable({
           <thead className="border-b-2 border-black bg-brand-fixed">
             <tr>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-black">
-                User
+                Name
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-black">
+                Email
               </th>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-black">
                 Status
@@ -146,15 +149,13 @@ export function UsersTable({
                   className="transition-colors hover:bg-surface-container"
                 >
                   <td className="px-6 py-4">
-                    <div>
-                      <div className="font-headline text-sm font-bold text-black">
-                        {user.email}
-                      </div>
-                      {user.display_name && (
-                        <div className="text-sm text-on-surface-variant">
-                          {user.display_name}
-                        </div>
-                      )}
+                    <div className="min-w-40 font-headline text-sm font-bold text-black">
+                      {user.display_name}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="min-w-48 text-sm text-on-surface-variant">
+                      {user.email}
                     </div>
                   </td>
                   <td className="px-6 py-4">
