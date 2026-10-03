@@ -1,7 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { CATALOG_TAG } from "@/lib/queries/catalog";
 import {
   validateMockBlueprint,
   type MockBlueprintInput,
@@ -79,6 +80,7 @@ export async function createEntryTest(formData: {
     return { success: false, error: error.message };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/entry-tests");
   return { success: true, data };
 }
@@ -150,6 +152,7 @@ export async function updateEntryTest(
     return { success: false, error: error.message };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/entry-tests");
   revalidatePath(`/admin/entry-tests/${id}`);
   return { success: true, data };
@@ -206,6 +209,7 @@ export async function deleteEntryTest(id: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/entry-tests");
   return { success: true };
 }
@@ -248,6 +252,7 @@ export async function toggleEntryTestActive(
     return { success: false, error: error.message };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/entry-tests");
   return { success: true };
 }
@@ -318,6 +323,7 @@ export async function assignSubjectToTest(
     return { success: false, error: error.message };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/entry-tests");
   revalidatePath(`/admin/entry-tests/${entryTestId}`);
   return { success: true, data };
@@ -371,6 +377,7 @@ export async function updateTestSubject(
     return { success: false, error: error.message };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/entry-tests");
   return { success: true, data };
 }
@@ -413,6 +420,7 @@ export async function removeSubjectFromTest(
     return { success: false, error: error.message };
   }
 
+  updateTag(CATALOG_TAG);
   revalidatePath("/admin/entry-tests");
   return { success: true };
 }
