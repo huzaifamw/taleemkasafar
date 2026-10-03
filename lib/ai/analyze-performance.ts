@@ -1,5 +1,11 @@
 import { GEMINI_MODEL, getGeminiModel } from "./gemini-client";
-import { buildAnalysisPrompt, type PerformanceData } from "./analysis-prompt";
+import {
+  buildAnalysisPrompt,
+  hasEnoughTopicEvidence,
+  WEAK_ACCURACY_PERCENT,
+  type PerformanceData,
+} from "./analysis-prompt";
+import { buildEvidenceSummary } from "./analysis-evidence";
 import { createClient } from "@/lib/supabase/server";
 import {
   getAnalysisEligibility,
@@ -378,30 +384,49 @@ function restrictAnalysisToEligibleSubjects(
     performanceData.subjectBreakdown.map(subject => normalize(subject.subject)),
   );
   const allowedTopics = new Set(
-    performanceData.topicBreakdown.map(
+    performanceData.topicBreakdown
+      .filter(topic => hasEnoughTopicEvidence(topic.total))
+      .map(
       topic => `${normalize(topic.subject)}::${normalize(topic.topic)}`,
     ),
   );
-  const excludedNames = performanceData.excludedSubjects
-    .map(subject => normalize(subject.subject))
-    .filter(Boolean);
-  const mentionsExcludedSubject = (value: unknown) => {
-    const text = normalize(value);
-    return excludedNames.some(name => text.includes(name));
-  };
+  const weakSubjects = new Set(
+    performanceData.subjectBreakdown
+      .filter(subject => subject.percentage < WEAK_ACCURACY_PERCENT)
+      .map(subject => normalize(subject.subject)),
+  );
+  const weakTopics = new Set(
+    performanceData.topicBreakdown
+      .filter(
+        topic =>
+          hasEnoughTopicEvidence(topic.total) &&
+          topic.percentage < WEAK_ACCURACY_PERCENT,
+      )
+      .map(topic => `${normalize(topic.subject)}::${normalize(topic.topic)}`),
+  );
   const allowedSubjectItem = (item: AnalysisItem) =>
     item && allowedSubjects.has(normalize(item.subject));
   const allowedTopicItem = (item: AnalysisItem) =>
     allowedSubjectItem(item) &&
     allowedTopics.has(`${normalize(item.subject)}::${normalize(item.topic)}`);
+  const weakSubjectItem = (item: AnalysisItem) =>
+    allowedSubjectItem(item) && weakSubjects.has(normalize(item.subject));
+  const weakTopicItem = (item: AnalysisItem) =>
+    allowedTopicItem(item) &&
+    weakTopics.has(`${normalize(item.subject)}::${normalize(item.topic)}`);
+  const recommendationMatchesWeakEvidence = (item: AnalysisItem) =>
+    normalize(item.topic) ? weakTopicItem(item) : weakSubjectItem(item);
+  const evidence = buildEvidenceSummary(performanceData);
 
   return {
     ...analysis,
-    strengths: analysis.strengths.filter(item => !mentionsExcludedSubject(item)),
-    weaknesses: analysis.weaknesses.filter(item => !mentionsExcludedSubject(item)),
-    weak_subjects: analysis.weak_subjects.filter(allowedSubjectItem),
-    weak_topics: analysis.weak_topics.filter(allowedTopicItem),
-    study_recommendations: analysis.study_recommendations.filter(allowedSubjectItem),
-    practice_recommendations: analysis.practice_recommendations.filter(allowedTopicItem),
+    strengths: evidence.strengths,
+    weaknesses: evidence.weaknesses,
+    weak_subjects: evidence.weakSubjects,
+    weak_topics: evidence.weakTopics,
+    study_recommendations: analysis.study_recommendations.filter(
+      recommendationMatchesWeakEvidence,
+    ),
+    practice_recommendations: analysis.practice_recommendations.filter(weakTopicItem),
   };
 }

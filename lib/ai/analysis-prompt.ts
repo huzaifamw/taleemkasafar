@@ -40,10 +40,22 @@ export interface PerformanceData {
   }>;
 }
 
+export const STRONG_ACCURACY_PERCENT = 75;
+export const WEAK_ACCURACY_PERCENT = 50;
+export const MIN_TOPIC_ANSWERS_FOR_ANALYSIS = 3;
+
+export function hasEnoughTopicEvidence(totalAnswered: number): boolean {
+  return totalAnswered >= MIN_TOPIC_ANSWERS_FOR_ANALYSIS;
+}
+
 /**
  * Build comprehensive AI analysis prompt for Gemini
  */
 export function buildAnalysisPrompt(data: PerformanceData): string {
+  const supportedTopics = data.topicBreakdown
+    .filter(topic => hasEnoughTopicEvidence(topic.total))
+    .sort((a, b) => a.percentage - b.percentage);
+
   return `You are an expert educational AI tutor specializing in Pakistani university entry test preparation (NUST NET, ECAT, MDCAT, PU, GIKI). Analyze this student's mock test performance and provide personalized, actionable recommendations.
 
 **STUDENT PERFORMANCE DATA:**
@@ -65,12 +77,12 @@ ${data.excludedSubjects.length > 0
   ? data.excludedSubjects.map(s => `- ${s.subject}: ${s.answered}/${s.availableTotal} answered; requires ${s.requiredAnswers}`).join('\n')
   : '- None'}
 
-**TOPIC-WISE PERFORMANCE (Top weakest topics):**
-${data.topicBreakdown
-  .sort((a, b) => a.percentage - b.percentage)
-  .slice(0, 10)
+**TOPIC-WISE PERFORMANCE (SUPPORTED BY AT LEAST ${MIN_TOPIC_ANSWERS_FOR_ANALYSIS} ANSWERS):**
+${supportedTopics.length > 0
+  ? supportedTopics
   .map(t => `- ${t.topic} (${t.subject}): ${t.score}/${t.total} (${t.percentage}%)`)
-  .join('\n')}
+  .join('\n')
+  : '- No topic has enough answered questions for topic-specific analysis.'}
 
 **DIFFICULTY-WISE PERFORMANCE:**
 - Easy: ${data.difficultyBreakdown.easy.correct}/${data.difficultyBreakdown.easy.total} (${data.difficultyBreakdown.easy.percentage}%)
@@ -83,21 +95,13 @@ ${data.previousAttempts.map(a => `- ${a.date}: ${a.score}%`).join('\n')}
 ` : ''}
 
 **YOUR TASK:**
-Generate a comprehensive, personalized performance analysis with actionable study recommendations.
+Generate a comprehensive, personalized performance analysis with actionable study recommendations. Every output array is variable-length. Return every distinct area supported by the rules below, and return an empty array when no area qualifies. Never invent filler items to reach a target count.
 
 **OUTPUT FORMAT (Strict JSON):**
 {
   "performance_tier": "excellent" | "good" | "average" | "needs_improvement",
-  "strengths": [
-    "Specific strength with numbers",
-    "Another strength with evidence",
-    "Third strength"
-  ],
-  "weaknesses": [
-    "Specific weakness with numbers",
-    "Another weakness with evidence",
-    "Third weakness"
-  ],
+  "strengths": [],
+  "weaknesses": [],
   "weak_subjects": [
     {
       "subject": "Subject Name",
@@ -139,18 +143,22 @@ Generate a comprehensive, personalized performance analysis with actionable stud
 1. Be specific and use numbers from the data
 2. Performance tier: excellent (>80%), good (60-80%), average (40-60%), needs_improvement (<40%)
 3. Severity: critical (<30%), high (30-50%), medium (50-70%), low (>70%)
-4. Prioritize high-impact improvements (topics that affect multiple subjects or are frequently tested)
-5. Recommendations should be achievable (2-4 hours per topic max)
-6. Be encouraging but honest - focus on what's fixable
-7. For topics with <30% score, mark as "critical" severity
-8. Limit to 5 study recommendations maximum (prioritize top weaknesses)
-9. Limit to 3-5 practice recommendations
-10. Motivational message should mention specific numbers and realistic goals
-11. Never count or describe an unanswered question as incorrect
-12. Subject, topic, difficulty, weakness, and practice recommendations must use only ELIGIBLE SUBJECT PERFORMANCE
-13. Never infer ability, weakness, or strength for a subject listed under SUBJECTS EXCLUDED FOR INSUFFICIENT DATA
-14. Use answered-question denominators for accuracy; the official overall score may include unanswered-question scoring
-15. If data confidence is LIMITED, explicitly acknowledge that conclusions are preliminary
+4. A subject or supported topic is a strength only when its answered-question accuracy is at least ${STRONG_ACCURACY_PERCENT}%
+5. A subject or supported topic is weak only when its answered-question accuracy is below ${WEAK_ACCURACY_PERCENT}%
+6. Topic conclusions require at least ${MIN_TOPIC_ANSWERS_FOR_ANALYSIS} answered questions in that topic; omit topics with smaller samples
+7. Include every distinct qualifying strength and weakness once. The counts must vary with the evidence and may be zero
+8. Include every qualifying weak subject in weak_subjects and every qualifying weak topic in weak_topics; do not add developing or strong areas to these arrays
+9. Create recommendations for the actual weak areas only. Prefer one clear recommendation per distinct weak topic, or per weak subject when no supported weak topic exists; avoid duplicates
+10. Prioritize high-impact improvements (topics that affect multiple subjects or are frequently tested)
+11. Recommendations should be achievable (2-4 hours per topic max)
+12. Be encouraging but honest - focus on what's fixable
+13. For topics with <30% score, mark as "critical" severity
+14. Motivational message should mention specific numbers and realistic goals
+15. Never count or describe an unanswered question as incorrect
+16. Subject, topic, difficulty, weakness, and practice recommendations must use only ELIGIBLE SUBJECT PERFORMANCE
+17. Never infer ability, weakness, or strength for a subject listed under SUBJECTS EXCLUDED FOR INSUFFICIENT DATA
+18. Use answered-question denominators for accuracy; the official overall score may include unanswered-question scoring
+19. If data confidence is LIMITED, explicitly acknowledge that conclusions are preliminary
 
 **RESPOND ONLY WITH VALID JSON. NO MARKDOWN, NO EXPLANATIONS, JUST JSON.**`;
 }

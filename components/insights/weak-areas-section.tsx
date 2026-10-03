@@ -61,7 +61,7 @@ export function WeakAreasSection({ weaknesses, weakSubjects, weakTopics }: WeakA
         <div>
           <h4 className="mb-3 text-sm font-bold uppercase text-gray-600">Topics Needing Focus</h4>
           <div className="space-y-2">
-            {weakTopics.slice(0, 5).map((topic, index) => (
+            {weakTopics.map((topic, index) => (
               <div key={index} className="flex items-center justify-between border-2 border-black bg-white p-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                 <div className="flex items-center gap-3">
                   <Icon name="menu_book" className="text-2xl text-gray-600" />
@@ -74,11 +74,6 @@ export function WeakAreasSection({ weaknesses, weakSubjects, weakTopics }: WeakA
               </div>
             ))}
           </div>
-          {weakTopics.length > 5 && (
-            <p className="mt-3 text-center text-xs text-gray-600">
-              + {weakTopics.length - 5} more topics
-            </p>
-          )}
         </div>
       )}
     </div>

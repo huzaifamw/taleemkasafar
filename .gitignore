@@ -34,8 +34,8 @@
 .DS_Store
 *.pem
 
-# local AI-agent working memory (per-machine scratchpad; global context is committed)
-/.kiro/context/local/
+# local AI-agent configuration and working memory
+/.kiro/
 
 # local scratch notes & pasted reference screenshots (not part of the app)
 /ux-issues.md
